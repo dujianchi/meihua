@@ -10,7 +10,22 @@ class Pan extends StatelessWidget {
     PanYao? panYao = ModalRoute.of(context)?.settings.arguments as PanYao;
     return Scaffold(
       appBar: AppBar(title: const Text('梅花易数盘')),
-      body: Gua(panYao.shang, panYao.xia),
+      body: Row(
+        children: [
+          Expanded(
+            child: Gua(
+              panYao.shang,
+              panYao.xia,
+            ),
+          ),
+          Expanded(
+              child: Gua(
+            panYao.shang,
+            panYao.xia,
+            hu: true,
+          ))
+        ],
+      ),
     );
   }
 }
