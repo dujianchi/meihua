@@ -23,6 +23,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final children = <Widget>[];
 
+    children.add(const Text('不(发生变)动不占，不因(有)事不占', style: TextStyle(color: Colors.redAccent),));
+
     children.add(const LunarClock());
 
     children.add(Tooltip(
@@ -40,7 +42,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       routes: {
-        'pan': (context) => Pan(),
+        'pan': (context) => const Pan(),
       },
       home: Scaffold(
         key: _scaffoldKey,
