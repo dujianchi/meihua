@@ -30,7 +30,7 @@ class _LunarClockState extends State<LunarClock> {
   Widget build(BuildContext context) {
     final lunar = Lunar.fromDate(_current);
     return Text(
-      '${lunar.getYearGan()}${lunar.getYearZhi()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}日 ${lunar.getTimeZhi()}时',
+      '${lunar.getYearGan()}${lunar.getYearZhi()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}日 ${lunar.getTimeZhi()}时 ${lunar.getSeason()}',
       // style: const TextStyle(fontSize: 20.0),
     );
   }

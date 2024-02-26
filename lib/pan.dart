@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:meihua/entity/pan_yao.dart';
 import 'package:meihua/widget/gua.dart';
 
+import 'widget/lunar_clock.dart';
+
 class Pan extends StatelessWidget {
+  static const double spacing = 5;
   const Pan({super.key});
 
   @override
@@ -10,20 +13,30 @@ class Pan extends StatelessWidget {
     PanYao? panYao = ModalRoute.of(context)?.settings.arguments as PanYao;
     return Scaffold(
       appBar: AppBar(title: const Text('梅花易数盘')),
-      body: Row(
+      body: Column(
         children: [
-          Expanded(
-            child: Gua(
-              panYao.shang,
-              panYao.xia,
+          const LunarClock(),
+          AspectRatio(
+            aspectRatio: 1.2,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Gua(
+                    panYao.shang,
+                    panYao.xia,
+                    spacing: spacing,
+                  ),
+                ),
+                Expanded(
+                    child: Gua(
+                  panYao.shang,
+                  panYao.xia,
+                  spacing: spacing,
+                  hu: true,
+                ))
+              ],
             ),
           ),
-          Expanded(
-              child: Gua(
-            panYao.shang,
-            panYao.xia,
-            hu: true,
-          ))
         ],
       ),
     );

@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
       },
       home: Scaffold(
         key: _scaffoldKey,
-        appBar: AppBar(title: const Text('梅花易数盘')),
+        appBar: AppBar(title: const Text('梅花易数排盘')),
         body: ListView.separated(
             padding: const EdgeInsets.all(_spacing),
             itemBuilder: (conntext, index) => children[index],

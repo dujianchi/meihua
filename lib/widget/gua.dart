@@ -7,8 +7,10 @@ class Gua extends StatelessWidget {
   final int shang, xia;
   final bool hu;
   final int? bian;
+  final double spacing;
 
-  const Gua(this.shang, this.xia, {super.key, this.hu = false, this.bian});
+  const Gua(this.shang, this.xia,
+      {super.key, this.hu = false, this.bian, this.spacing = 10});
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +20,12 @@ class Gua extends StatelessWidget {
           Expanded(
               child: BaGua(
             baGua: BaGuaZ.fromValue(shang),
+            spacing: spacing,
           )),
           Expanded(
               child: BaGua(
             baGua: BaGuaZ.fromValue(xia),
+            spacing: spacing,
           )),
         ],
       );
@@ -34,10 +38,12 @@ class Gua extends StatelessWidget {
           Expanded(
               child: BaGua(
             baGua: BaGuaZ.fromBin(shang1),
+            spacing: spacing,
           )),
           Expanded(
               child: BaGua(
             baGua: BaGuaZ.fromBin(xia1),
+            spacing: spacing,
           )),
         ],
       );

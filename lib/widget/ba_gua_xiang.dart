@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/enum/ba_gua_zhi.dart';
+import 'package:meihua/util/consts.dart';
 import 'package:meihua/widget/yao.dart';
 
 /// 八卦 - 象
@@ -134,12 +135,34 @@ class BaGua extends StatelessWidget {
         children.add(yin);
         children.add(yin);
       }
-      return Container(
-        color: background, // 白底
-        margin: EdgeInsets.all(spacing),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: children,
+      return Tooltip(
+        message: Consts.guaStrs[baGua?.name],
+        child: Stack(
+          children: [
+            Container(
+              color: background, // 白底
+              margin: EdgeInsets.all(spacing),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: children,
+              ),
+            ),
+            Center(
+              child: Text(
+                baGua?.name ?? '',
+                style: TextStyle(
+                  fontSize: 18,
+                  foreground: Paint()
+                    ..style = PaintingStyle.stroke
+                    ..strokeWidth = 1.5
+                    ..strokeJoin = StrokeJoin.round
+                    ..strokeCap = StrokeCap.round
+                    ..color = Colors.blue,
+                  background: Paint()..color = Colors.amber,
+                ),
+              ),
+            )
+          ],
         ),
       );
     }
