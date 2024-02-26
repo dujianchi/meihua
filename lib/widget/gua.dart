@@ -9,15 +9,15 @@ class Gua extends StatelessWidget {
   const Gua(this.shang, this.xia, {super.key});
 
   @override
-  Widget build(BuildContext context) => const Column(
+  Widget build(BuildContext context) => Column(
         children: [
           Expanded(
               child: BaGua(
-            baGua: BaGuaZ.qian,
+            baGua: BaGuaZ.fromValue(shang),
           )),
           Expanded(
               child: BaGua(
-            baGua: BaGuaZ.li,
+            baGua: BaGuaZ.fromValue(xia),
           )),
         ],
       );

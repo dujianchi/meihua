@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// 八卦 - 值
-/// 乾一,兑二,离三,震四,巽五,坎六,艮七,坤八
+/// 五行 - 值
+/// 金木水火土
 enum WuXingZ {
-  jin(Colors.yellow),
-  mu(Colors.green),
-  shui(Colors.black),
-  huo(Colors.red),
-  tu(Colors.orange),
+  jin('金', Colors.yellow),
+  mu('木', Colors.green),
+  shui('水', Colors.black),
+  huo('火', Colors.red),
+  tu('土', Colors.orange),
   ;
 
+  final String name;
   final Color color;
-  const WuXingZ(this.color);
+  const WuXingZ(this.name, this.color);
 }
