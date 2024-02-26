@@ -1,21 +1,21 @@
 import 'package:flutter/widgets.dart';
-import 'package:meihua/enum/ba_gua_zhi.dart';
+import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/widget/ba_gua_xiang.dart';
 
 /// 卦
-class Gua extends StatelessWidget {
+class ChongGua extends StatelessWidget {
   final int shang, xia;
   final bool hu;
   final int? bian;
   final double spacing;
 
-  const Gua(this.shang, this.xia,
+  const ChongGua(this.shang, this.xia,
       {super.key, this.hu = false, this.bian, this.spacing = 10});
 
   Widget _bianYao(int bian1) {
     final bian = 7 - bian1;
     final bianIndex = bian - 1;
-    final bins = BaGuaZ.fromValue(shang).bin + BaGuaZ.fromValue(xia).bin;
+    final bins = BaGua.fromValue(shang).bin + BaGua.fromValue(xia).bin;
     final bianStr = bins[bianIndex];
     final String b;
     if (bianStr == '1') {
@@ -28,13 +28,13 @@ class Gua extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-            child: BaGua(
-          baGua: BaGuaZ.fromBin(shang1),
+            child: Gua(
+          baGua: BaGua.fromBin(shang1),
           spacing: spacing,
         )),
         Expanded(
-            child: BaGua(
-          baGua: BaGuaZ.fromBin(xia1),
+            child: Gua(
+          baGua: BaGua.fromBin(xia1),
           spacing: spacing,
         )),
       ],
@@ -47,31 +47,31 @@ class Gua extends StatelessWidget {
       return Column(
         children: [
           Expanded(
-              child: BaGua(
-            baGua: BaGuaZ.fromValue(shang),
+              child: Gua(
+            baGua: BaGua.fromValue(shang),
             spacing: spacing,
           )),
           Expanded(
-              child: BaGua(
-            baGua: BaGuaZ.fromValue(xia),
+              child: Gua(
+            baGua: BaGua.fromValue(xia),
             spacing: spacing,
           )),
         ],
       );
     } else if (hu) {
-      final bins = BaGuaZ.fromValue(shang).bin + BaGuaZ.fromValue(xia).bin;
+      final bins = BaGua.fromValue(shang).bin + BaGua.fromValue(xia).bin;
       final shang1 = bins.substring(1, 4);
       final xia1 = bins.substring(2, 5);
       return Column(
         children: [
           Expanded(
-              child: BaGua(
-            baGua: BaGuaZ.fromBin(shang1),
+              child: Gua(
+            baGua: BaGua.fromBin(shang1),
             spacing: spacing,
           )),
           Expanded(
-              child: BaGua(
-            baGua: BaGuaZ.fromBin(xia1),
+              child: Gua(
+            baGua: BaGua.fromBin(xia1),
             spacing: spacing,
           )),
         ],

@@ -1,4 +1,4 @@
-import 'package:meihua/enum/ba_gua_zhi.dart';
+import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/widget/ba_gua_xiang.dart';
 
 class Consts {

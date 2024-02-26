@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:meihua/enum/ba_gua_zhi.dart';
+import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/util/consts.dart';
 import 'package:meihua/widget/yao.dart';
 
 /// 八卦 - 象
 /// 乾一,兑二,离三,震四,巽五,坎六,艮七,坤八
 /// 乾三连，兑上缺，离中虚，震仰盂，巽下断，坎中满，艮覆碗，坤六断
-class BaGua extends StatelessWidget {
-  final BaGuaZ? baGua;
+class Gua extends StatelessWidget {
+  final BaGua? baGua;
   final double spacing;
   final Color background;
 
-  const BaGua({
+  const Gua({
     super.key,
     this.baGua,
     this.spacing = 10,
@@ -24,110 +24,110 @@ class BaGua extends StatelessWidget {
       return const SizedBox.shrink(); // 返回空白
     } else {
       final children = <Widget>[];
-      if (baGua == BaGuaZ.qian) {
+      if (baGua == BaGua.qian) {
         final yang = Yao(
           true,
-          BaGuaZ.qian.wuXing.color,
+          BaGua.qian.wuXing.color,
           spacing: spacing,
         );
         // 乾三连
         children.add(yang);
         children.add(yang);
         children.add(yang);
-      } else if (baGua == BaGuaZ.dui) {
+      } else if (baGua == BaGua.dui) {
         final yin = Yao(
           false,
-          BaGuaZ.dui.wuXing.color,
+          BaGua.dui.wuXing.color,
           spacing: spacing,
         );
         final yang = Yao(
           true,
-          BaGuaZ.dui.wuXing.color,
+          BaGua.dui.wuXing.color,
           spacing: spacing,
         );
         // 兑上缺
         children.add(yin);
         children.add(yang);
         children.add(yang);
-      } else if (baGua == BaGuaZ.li) {
+      } else if (baGua == BaGua.li) {
         final yin = Yao(
           false,
-          BaGuaZ.li.wuXing.color,
+          BaGua.li.wuXing.color,
           spacing: spacing,
         );
         final yang = Yao(
           true,
-          BaGuaZ.li.wuXing.color,
+          BaGua.li.wuXing.color,
           spacing: spacing,
         );
         // 离中虚
         children.add(yang);
         children.add(yin);
         children.add(yang);
-      } else if (baGua == BaGuaZ.zhen) {
+      } else if (baGua == BaGua.zhen) {
         final yin = Yao(
           false,
-          BaGuaZ.zhen.wuXing.color,
+          BaGua.zhen.wuXing.color,
           spacing: spacing,
         );
         final yang = Yao(
           true,
-          BaGuaZ.zhen.wuXing.color,
+          BaGua.zhen.wuXing.color,
           spacing: spacing,
         );
         // 震仰盂
         children.add(yin);
         children.add(yin);
         children.add(yang);
-      } else if (baGua == BaGuaZ.xun) {
+      } else if (baGua == BaGua.xun) {
         final yin = Yao(
           false,
-          BaGuaZ.xun.wuXing.color,
+          BaGua.xun.wuXing.color,
           spacing: spacing,
         );
         final yang = Yao(
           true,
-          BaGuaZ.xun.wuXing.color,
+          BaGua.xun.wuXing.color,
           spacing: spacing,
         );
         // 巽下断
         children.add(yang);
         children.add(yang);
         children.add(yin);
-      } else if (baGua == BaGuaZ.kan) {
+      } else if (baGua == BaGua.kan) {
         final yin = Yao(
           false,
-          BaGuaZ.kan.wuXing.color,
+          BaGua.kan.wuXing.color,
           spacing: spacing,
         );
         final yang = Yao(
           true,
-          BaGuaZ.kan.wuXing.color,
+          BaGua.kan.wuXing.color,
           spacing: spacing,
         );
         // 坎中满
         children.add(yin);
         children.add(yang);
         children.add(yin);
-      } else if (baGua == BaGuaZ.gen) {
+      } else if (baGua == BaGua.gen) {
         final yin = Yao(
           false,
-          BaGuaZ.gen.wuXing.color,
+          BaGua.gen.wuXing.color,
           spacing: spacing,
         );
         final yang = Yao(
           true,
-          BaGuaZ.gen.wuXing.color,
+          BaGua.gen.wuXing.color,
           spacing: spacing,
         );
         // 艮覆碗
         children.add(yang);
         children.add(yin);
         children.add(yin);
-      } else if (baGua == BaGuaZ.kun) {
+      } else if (baGua == BaGua.kun) {
         final yin = Yao(
           false,
-          BaGuaZ.kun.wuXing.color,
+          BaGua.kun.wuXing.color,
           spacing: spacing,
         );
         // 坤六断

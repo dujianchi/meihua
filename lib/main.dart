@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lunar/lunar.dart';
-import 'package:meihua/entity/pan_yao.dart';
-import 'package:meihua/enum/ba_gua_zhi.dart';
+import 'package:meihua/entity/yi.dart';
+import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/enum/di_zhi.dart';
 import 'package:meihua/pan.dart';
 import 'package:meihua/widget/ba_gua_xiang.dart';
-import 'package:meihua/widget/gua.dart';
+import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/lunar_clock.dart';
 
 void main() {
@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
 
   void goPan(int shang, int xia, int dong) {
     Navigator.of(_scaffoldKey.currentContext!).pushNamed('pan',
-        arguments: PanYao(shang: shang, xia: xia, dong: dong));
+        arguments: Yi(shang: shang, xia: xia, dong: dong));
   }
 
   void _calcCurrentDatetime() {
@@ -82,7 +82,7 @@ class MyApp extends StatelessWidget {
     if (kDebugMode) {
       print('shang = $shang, xia = $xia, dong = $dong');
       print(
-          'shang = ${BaGuaZ.fromValue(shang).name}, xia = ${BaGuaZ.fromValue(xia).name}, dong = $dong');
+          'shang = ${BaGua.fromValue(shang).name}, xia = ${BaGua.fromValue(xia).name}, dong = $dong');
     }
     goPan(shang, xia, dong);
   }

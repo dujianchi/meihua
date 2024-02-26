@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:meihua/entity/pan_yao.dart';
-import 'package:meihua/widget/gua.dart';
+import 'package:meihua/entity/yi.dart';
+import 'package:meihua/widget/chong_gua.dart';
 
 import 'widget/lunar_clock.dart';
 
@@ -10,7 +10,7 @@ class Pan extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    PanYao? panYao = ModalRoute.of(context)?.settings.arguments as PanYao;
+    Yi? panYao = ModalRoute.of(context)?.settings.arguments as Yi;
     return Scaffold(
       appBar: AppBar(title: const Text('梅花易数盘')),
       body: SingleChildScrollView(
@@ -22,21 +22,21 @@ class Pan extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: Gua(
+                    child: ChongGua(
                       panYao.shang,
                       panYao.xia,
                       spacing: spacing,
                     ),
                   ),
                   Expanded(
-                      child: Gua(
+                      child: ChongGua(
                     panYao.shang,
                     panYao.xia,
                     spacing: spacing,
                     hu: true,
                   )),
                   Expanded(
-                      child: Gua(
+                      child: ChongGua(
                     panYao.shang,
                     panYao.xia,
                     spacing: spacing,

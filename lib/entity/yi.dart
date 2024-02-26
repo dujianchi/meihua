@@ -1,6 +1,6 @@
-class PanYao {
+class Yi {
   final int shang, xia, dong;
-  PanYao({
+  Yi({
     required this.shang,
     required this.xia,
     required this.dong,
