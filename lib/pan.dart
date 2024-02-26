@@ -33,7 +33,14 @@ class Pan extends StatelessWidget {
                   panYao.xia,
                   spacing: spacing,
                   hu: true,
-                ))
+                )),
+                Expanded(
+                    child: Gua(
+                  panYao.shang,
+                  panYao.xia,
+                  spacing: spacing,
+                  bian: panYao.dong,
+                )),
               ],
             ),
           ),

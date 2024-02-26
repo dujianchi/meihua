@@ -135,35 +135,30 @@ class BaGua extends StatelessWidget {
         children.add(yin);
         children.add(yin);
       }
-      return Tooltip(
-        message: Consts.guaStrs[baGua?.name],
-        child: Stack(
-          children: [
-            Container(
-              color: background, // 白底
-              margin: EdgeInsets.all(spacing),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: children,
-              ),
+      return Stack(
+        children: [
+          Container(
+            color: background, // 白底
+            margin: EdgeInsets.all(spacing),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: children,
             ),
-            Center(
+          ),
+          Center(
+            child: Tooltip(
+              message: Consts.guaStrs[baGua?.name],
               child: Text(
                 baGua?.name ?? '',
                 style: TextStyle(
-                  fontSize: 18,
-                  foreground: Paint()
-                    ..style = PaintingStyle.stroke
-                    ..strokeWidth = 1.5
-                    ..strokeJoin = StrokeJoin.round
-                    ..strokeCap = StrokeCap.round
-                    ..color = Colors.blue,
-                  background: Paint()..color = Colors.amber,
+                  fontSize: 28,
+                  background: Paint()..color = Colors.white54,
+                  foreground: Paint()..color = Colors.blueAccent,
                 ),
               ),
-            )
-          ],
-        ),
+            ),
+          )
+        ],
       );
     }
   }

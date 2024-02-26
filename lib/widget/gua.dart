@@ -12,6 +12,35 @@ class Gua extends StatelessWidget {
   const Gua(this.shang, this.xia,
       {super.key, this.hu = false, this.bian, this.spacing = 10});
 
+  Widget _bianYao(int bian1) {
+    final bian = 7 - bian1;
+    final bianIndex = bian - 1;
+    final bins = BaGuaZ.fromValue(shang).bin + BaGuaZ.fromValue(xia).bin;
+    final bianStr = bins[bianIndex];
+    final String b;
+    if (bianStr == '1') {
+      b = bins.replaceRange(bianIndex, bian, '0');
+    } else {
+      b = bins.replaceRange(bianIndex, bian, '1');
+    }
+    final shang1 = b.substring(0, 3);
+    final xia1 = b.substring(3, 6);
+    return Column(
+      children: [
+        Expanded(
+            child: BaGua(
+          baGua: BaGuaZ.fromBin(shang1),
+          spacing: spacing,
+        )),
+        Expanded(
+            child: BaGua(
+          baGua: BaGuaZ.fromBin(xia1),
+          spacing: spacing,
+        )),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!hu && bian == null) {
@@ -48,7 +77,7 @@ class Gua extends StatelessWidget {
         ],
       );
     } else if (bian != null) {
-      return SizedBox.shrink();
+      return _bianYao(bian!);
     } else {
       return SizedBox.shrink();
     }
