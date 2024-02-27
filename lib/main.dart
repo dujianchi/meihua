@@ -1,12 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
-import 'package:meihua/enum/di_zhi.dart';
 import 'package:meihua/pan.dart';
-import 'package:meihua/widget/gua.dart';
-import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/lunar_clock.dart';
 
 void main() {
@@ -63,7 +59,10 @@ class MyApp extends StatelessWidget {
 
   void goPan(int shang, int xia, int dong) {
     Navigator.of(_scaffoldKey.currentContext!).pushNamed('pan',
-        arguments: Yi(shang: shang == 0 ? 8 : shang, xia: xia == 0 ? 8 : xia, dong: dong == 0 ? 6 : dong));
+        arguments: Yi(
+            shang: shang == 0 ? 8 : shang,
+            xia: xia == 0 ? 8 : xia,
+            dong: dong == 0 ? 6 : dong));
   }
 
   void _calcCurrentDatetime() {
@@ -76,17 +75,17 @@ class MyApp extends StatelessWidget {
         month = lunar.getMonth().abs(),
         day = lunar.getDay(),
         hour = lunar.getTimeZhiIndex() + 1;
-    if (kDebugMode) {
-      print('year = $year, month = $month, day = $day, hour = $hour');
-    }
+
+    debugPrint('year = $year, month = $month, day = $day, hour = $hour');
+
     final shang = (year + month + day) % 8;
     final xia = (shang + hour) % 8;
     final dong = (shang + hour) % 6;
-    if (kDebugMode) {
-      print('shang = $shang, xia = $xia, dong = $dong');
-      print(
-          'shang = ${BaGua.fromValue(shang).name}, xia = ${BaGua.fromValue(xia).name}, dong = $dong');
-    }
+
+    debugPrint('shang = $shang, xia = $xia, dong = $dong');
+    debugPrint(
+        'shang = ${BaGua.fromValue(shang).name}, xia = ${BaGua.fromValue(xia).name}, dong = $dong');
+
     goPan(shang, xia, dong);
   }
 }

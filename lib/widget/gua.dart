@@ -151,8 +151,8 @@ class Gua extends StatelessWidget {
               child: Text(
                 baGua?.name ?? '',
                 style: TextStyle(
-                  fontSize: 28,
-                  background: Paint()..color = Colors.white54,
+                  fontSize: 24,
+                  background: Paint()..color = Colors.white24,
                   foreground: Paint()..color = Colors.blueAccent,
                 ),
               ),

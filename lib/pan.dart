@@ -5,7 +5,7 @@ import 'package:meihua/widget/chong_gua.dart';
 import 'widget/lunar_clock.dart';
 
 class Pan extends StatelessWidget {
-  static const double spacing = 5;
+  static const double spacing = 3;
   const Pan({super.key});
 
   @override
@@ -20,7 +20,7 @@ class Pan extends StatelessWidget {
                 children: [
                   const LunarClock(),
                   AspectRatio(
-                    aspectRatio: 1.2,
+                    aspectRatio: 2,
                     child: Row(
                       children: [
                         Expanded(
