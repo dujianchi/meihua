@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/widget/gua.dart';
 
-/// 卦
+/// 重卦，主卦、互卦、变卦
 class ChongGua extends StatelessWidget {
   final int shang, xia;
   final bool hu;
@@ -79,7 +79,7 @@ class ChongGua extends StatelessWidget {
     } else if (bian != null) {
       return _bianYao(bian!);
     } else {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
   }
 }

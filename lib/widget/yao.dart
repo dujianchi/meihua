@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+/// 爻：阴爻、阳爻
 class Yao extends StatelessWidget {
   final bool yang;
   final Color froeground;

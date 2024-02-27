@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lunar/lunar.dart';
 
+/// 农历时间显示
 class LunarClock extends StatefulWidget {
   const LunarClock({super.key});
 

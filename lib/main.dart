@@ -23,7 +23,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final children = <Widget>[];
 
-    children.add(const Text('不(发生变)动不占，不因(有)事不占', style: TextStyle(color: Colors.redAccent),));
+    children.add(const Text(
+      '不(发生变)动不占，不因(有)事不占',
+      style: TextStyle(color: Colors.redAccent),
+    ));
 
     children.add(const LunarClock());
 
@@ -60,7 +63,7 @@ class MyApp extends StatelessWidget {
 
   void goPan(int shang, int xia, int dong) {
     Navigator.of(_scaffoldKey.currentContext!).pushNamed('pan',
-        arguments: Yi(shang: shang, xia: xia, dong: dong));
+        arguments: Yi(shang: shang == 0 ? 8 : shang, xia: xia == 0 ? 8 : xia, dong: dong == 0 ? 6 : dong));
   }
 
   void _calcCurrentDatetime() {

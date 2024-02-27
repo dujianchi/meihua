@@ -3,7 +3,7 @@ import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/util/consts.dart';
 import 'package:meihua/widget/yao.dart';
 
-/// 八卦 - 象
+/// 先天八卦
 /// 乾一,兑二,离三,震四,巽五,坎六,艮七,坤八
 /// 乾三连，兑上缺，离中虚，震仰盂，巽下断，坎中满，艮覆碗，坤六断
 class Gua extends StatelessWidget {
