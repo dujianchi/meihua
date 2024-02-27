@@ -5,7 +5,7 @@ import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/enum/di_zhi.dart';
 import 'package:meihua/pan.dart';
-import 'package:meihua/widget/ba_gua_xiang.dart';
+import 'package:meihua/widget/gua.dart';
 import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/lunar_clock.dart';
 

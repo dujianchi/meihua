@@ -147,7 +147,7 @@ class Gua extends StatelessWidget {
           ),
           Center(
             child: Tooltip(
-              message: Consts.guaStrs[baGua?.name],
+              message: Consts.guaStrs[baGua?.name]?.trim(),
               child: Text(
                 baGua?.name ?? '',
                 style: TextStyle(

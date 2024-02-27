@@ -1,5 +1,5 @@
 import 'package:meihua/enum/ba_gua.dart';
-import 'package:meihua/widget/ba_gua_xiang.dart';
+import 'package:meihua/widget/gua.dart';
 
 class Consts {
   /// 乾一,兑二,离三,震四,巽五,坎六,艮七,坤八
