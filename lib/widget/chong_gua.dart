@@ -41,6 +41,19 @@ class ChongGua extends StatelessWidget {
     }
   }
 
+  String tiyong(int dong) {
+    final BaGua? ti, yong;
+    final Gua64? gua64 = gua();
+    if (dong > 3) {
+      ti = gua64?.xia;
+      yong = gua64?.shang;
+    } else {
+      ti = gua64?.shang;
+      yong = gua64?.xia;
+    }
+    return '体${ti?.name}，用${yong?.name}，体->用：${ti?.wuXing.shengKeBihe(yong!.wuXing).name}，用->体：${yong?.wuXing.shengKeBihe(ti!.wuXing).name}';
+  }
+
   Widget _yaoWidget(Gua64 gua64) {
     final name = gua64.name();
     debugPrint('name = $name');

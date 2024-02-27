@@ -32,6 +32,10 @@ class _PanState extends State<_Pan> {
     return Consts.chongGuaStr2[_chongGua?.gua()?.name() ?? ''] ?? '';
   }
 
+  String _getSkText() {
+    return _chongGua?.tiyong(widget.yi!.dong) ?? '';
+  }
+
   void _changeChongGua(ChongGua chongGua) {
     setState(() {
       _chongGua = chongGua;
@@ -96,8 +100,12 @@ class _PanState extends State<_Pan> {
         ),
         Padding(
           padding: const EdgeInsets.all(10),
+          child: Text(_getSkText()),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(10),
           child: Text(_getText()),
-        )
+        ),
       ];
       body = SingleChildScrollView(
         child: Column(
