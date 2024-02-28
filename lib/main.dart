@@ -3,6 +3,7 @@ import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/pan.dart';
+import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/lunar_clock.dart';
 
 void main() {
@@ -12,6 +13,12 @@ void main() {
 class MyApp extends StatelessWidget {
   static const _spacing = 10.0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final editext1_1 = EditTextNum(label: '数字1'),
+      editext2_1 = EditTextNum(label: '数字1'),
+      editext2_2 = EditTextNum(label: '数字2'),
+      editext3_1 = EditTextNum(label: '数字1'),
+      editext3_2 = EditTextNum(label: '数字2'),
+      editext3_3 = EditTextNum(label: '数字3');
 
   MyApp({super.key});
 
@@ -32,6 +39,36 @@ class MyApp extends StatelessWidget {
       child: ElevatedButton(
         onPressed: _calcCurrentDatetime,
         child: const Text('以当下时辰起卦'),
+      ),
+    ));
+
+    children.add(editext1_1);
+    children.add(Tooltip(
+      message: '比见有可数之物，即以此物起作上卦，以时数配作下卦即以卦数并时数，总除六，取动交。',
+      child: ElevatedButton(
+        onPressed: () => _calcNumber(1),
+        child: const Text('以物数起卦'),
+      ),
+    ));
+
+    children.add(editext2_1);
+    children.add(editext2_2);
+    children.add(Tooltip(
+      message: '数1做上卦，数1+数2做下卦，取动爻',
+      child: ElevatedButton(
+        onPressed: () => _calcNumber(2),
+        child: const Text('以2数起卦'),
+      ),
+    ));
+
+    children.add(editext3_1);
+    children.add(editext3_2);
+    children.add(editext3_3);
+    children.add(Tooltip(
+      message: '数1做上卦，数2做下卦，数3做动爻',
+      child: ElevatedButton(
+        onPressed: () => _calcNumber(3),
+        child: const Text('以3数起卦'),
       ),
     ));
 
@@ -65,6 +102,21 @@ class MyApp extends StatelessWidget {
             dong: dong == 0 ? 6 : dong));
   }
 
+  int _quyu(int zong, int yu) {
+    final qu = zong % yu;
+    return qu != 0 ? qu : yu;
+  }
+
+  void _showTipMaybe(String msg) {
+    final context = _scaffoldKey.currentContext;
+    if (context != null) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+        content: Text(msg),
+        duration: const Duration(seconds: 1),
+      ));
+    }
+  }
+
   void _calcCurrentDatetime() {
     final lunar = Lunar.fromDate(DateTime.now());
     Text(
@@ -78,14 +130,100 @@ class MyApp extends StatelessWidget {
 
     debugPrint('year = $year, month = $month, day = $day, hour = $hour');
 
-    final shang = (year + month + day) % 8;
-    final xia = (shang + hour) % 8;
-    final dong = (shang + hour) % 6;
+    final shang = _quyu(year + month + day, 8);
+    final xia = _quyu(shang + hour, 8);
+    final dong = _quyu(shang + hour, 6);
 
     debugPrint('shang = $shang, xia = $xia, dong = $dong');
     debugPrint(
         'shang = ${BaGua.fromValue(shang).name}, xia = ${BaGua.fromValue(xia).name}, dong = $dong');
 
     goPan(shang, xia, dong);
+  }
+
+  void _calcNumber(int numberCount) {
+    if (numberCount == 1) {
+      final num1Str = editext1_1.trim();
+      if (num1Str.isEmpty) {
+        _showTipMaybe('数字1不能为空');
+        return;
+      }
+      final num1 = int.tryParse(num1Str);
+      if (num1 == null) {
+        _showTipMaybe('只能输入数字');
+        return;
+      }
+      final lunar = Lunar.fromDate(DateTime.now());
+      final hour = lunar.getTimeZhiIndex() + 1;
+      final shang = _quyu(num1, 8);
+      final zong = num1 + hour;
+      final xia = _quyu(zong, 8);
+      final dong = _quyu(zong, 6);
+      goPan(shang, xia, dong);
+    } else if (numberCount == 2) {
+      final num1Str = editext2_1.trim();
+      if (num1Str.isEmpty) {
+        _showTipMaybe('数字1不能为空');
+        return;
+      }
+      final num1 = int.tryParse(num1Str);
+      if (num1 == null) {
+        _showTipMaybe('数字1只能输入数字');
+        return;
+      }
+      final num2Str = editext2_2.trim();
+      if (num2Str.isEmpty) {
+        _showTipMaybe('数字2不能为空');
+        return;
+      }
+      final num2 = int.tryParse(num2Str);
+      if (num2 == null) {
+        _showTipMaybe('数字2只能输入数字');
+        return;
+      }
+      final shang = _quyu(num1, 8);
+      final zong = num1 + num2;
+      final xia = _quyu(zong, 8);
+      final dong = _quyu(zong, 6);
+      goPan(shang, xia, dong);
+    } else if (numberCount == 3) {
+      final num1Str = editext3_1.trim();
+      if (num1Str.isEmpty) {
+        _showTipMaybe('数字1不能为空');
+        return;
+      }
+      final num1 = int.tryParse(num1Str);
+      if (num1 == null) {
+        _showTipMaybe('数字1只能输入数字');
+        return;
+      }
+      final num2Str = editext3_2.trim();
+      if (num2Str.isEmpty) {
+        _showTipMaybe('数字2不能为空');
+        return;
+      }
+      final num2 = int.tryParse(num2Str);
+      if (num2 == null) {
+        _showTipMaybe('数字2只能输入数字');
+        return;
+      }
+      
+      final num3Str = editext3_3.trim();
+      if (num3Str.isEmpty) {
+        _showTipMaybe('数字3不能为空');
+        return;
+      }
+      final num3 = int.tryParse(num3Str);
+      if (num3 == null) {
+        _showTipMaybe('数字3只能输入数字');
+        return;
+      }
+      final shang = _quyu(num1, 8);
+      final xia = _quyu(num2, 8);
+      final dong = _quyu(num3, 6);
+      goPan(shang, xia, dong);
+    } else {
+      throw UnsupportedError('错误的参数');
+    }
   }
 }

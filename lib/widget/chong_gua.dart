@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/entity/gua64.dart';
 import 'package:meihua/enum/ba_gua.dart';
+import 'package:meihua/enum/sheng_ke_bihe.dart';
 import 'package:meihua/util/consts.dart';
 import 'package:meihua/widget/gua.dart';
 
@@ -51,7 +52,29 @@ class ChongGua extends StatelessWidget {
       ti = gua64?.shang;
       yong = gua64?.xia;
     }
-    return '体${ti?.name}，用${yong?.name}，体->用：${ti?.wuXing.shengKeBihe(yong!.wuXing).name}，用->体：${yong?.wuXing.shengKeBihe(ti!.wuXing).name}';
+    final tk = ti?.wuXing.shengKeBihe(yong!.wuXing);
+    final String tks;
+    switch (tk) {
+      case null:
+        tks = '';
+        break;
+      case ShengKeBihe.shengWo:
+        tks = '用生体，有补益';
+        break;
+      case ShengKeBihe.keWo:
+        tks = '用克体，不利';
+        break;
+      case ShengKeBihe.woSheng:
+        tks = '体生用，有损耗';
+        break;
+      case ShengKeBihe.woKe:
+        tks = '体克用，利';
+        break;
+      case ShengKeBihe.bihe:
+        tks = '体用比和，无损则利';
+        break;
+    }
+    return '体${ti?.name}(${ti?.wuXing.name})，用${yong?.name}(${yong?.wuXing.name})，$tks';
   }
 
   Widget _yaoWidget(Gua64 gua64) {
