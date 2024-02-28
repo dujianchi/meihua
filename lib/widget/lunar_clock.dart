@@ -13,11 +13,18 @@ class LunarClock extends StatefulWidget {
 
 class _LunarClockState extends State<LunarClock> {
   var _current = DateTime.now();
+  Timer? _timer;
   @override
   void initState() {
     super.initState();
     // 创建一个每秒执行一次的定时器
-    Timer.periodic(const Duration(seconds: 1), _updateTime);
+    _timer = Timer.periodic(const Duration(seconds: 1), _updateTime);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _updateTime(Timer timer) {

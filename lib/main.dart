@@ -61,6 +61,7 @@ class MyApp extends StatelessWidget {
       ),
     ));
 
+    children.add(const Center(child: Text('乾一,兑二,离三,震四,巽五,坎六,艮七,坤八')));
     children.add(editext3_1);
     children.add(editext3_2);
     children.add(editext3_3);
@@ -207,7 +208,7 @@ class MyApp extends StatelessWidget {
         _showTipMaybe('数字2只能输入数字');
         return;
       }
-      
+
       final num3Str = editext3_3.trim();
       if (num3Str.isEmpty) {
         _showTipMaybe('数字3不能为空');
