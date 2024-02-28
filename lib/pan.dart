@@ -46,6 +46,9 @@ class _PanState extends State<_Pan> {
   Widget build(BuildContext context) {
     final Widget body;
     if (widget.yi == null) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        Navigator.of(context).pushReplacementNamed('/');
+      });
       body = const SizedBox.shrink();
     } else {
       final zhuGua = ChongGua(
