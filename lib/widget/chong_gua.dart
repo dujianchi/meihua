@@ -99,7 +99,7 @@ class ChongGua extends StatelessWidget {
         Center(
           child: Tooltip(
             message: Consts.chongGuaStr[name],
-            child: Text(name),
+            child: SelectableText(name),
           ),
         ),
       ],

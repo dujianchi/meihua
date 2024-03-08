@@ -103,11 +103,11 @@ class _PanState extends State<_Pan> {
         ),
         Padding(
           padding: const EdgeInsets.all(10),
-          child: Text(_getSkText()),
+          child: SelectableText(_getSkText()),
         ),
         Padding(
           padding: const EdgeInsets.all(10),
-          child: Text(_getText()),
+          child: SelectableText(_getText()),
         ),
       ];
       body = SingleChildScrollView(
