@@ -3,8 +3,10 @@ import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/pan.dart';
+import 'package:meihua/tu_wen.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/lunar_clock.dart';
+import 'package:meihua/yi_jing.dart';
 
 void main() {
   runApp(MyApp());
@@ -16,9 +18,9 @@ class MyApp extends StatelessWidget {
   final editext1_1 = EditTextNum(label: '数字1'),
       editext2_1 = EditTextNum(label: '数字1'),
       editext2_2 = EditTextNum(label: '数字2'),
-      editext3_1 = EditTextNum(label: '数字1'),
-      editext3_2 = EditTextNum(label: '数字2'),
-      editext3_3 = EditTextNum(label: '数字3');
+      editext3_1 = EditTextNum(label: '上卦数字'),
+      editext3_2 = EditTextNum(label: '下卦数字'),
+      editext3_3 = EditTextNum(label: '变爻数字');
 
   MyApp({super.key});
 
@@ -80,10 +82,23 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         'pan': (context) => const Pan(),
+        'yi': (context) => const YiJing(),
+        'tu': (context) => const TuWen(),
       },
       home: Scaffold(
         key: _scaffoldKey,
-        appBar: AppBar(title: const Text('梅花易数排盘')),
+        appBar: AppBar(
+          title: const Text('梅花易数排盘'),
+          actions: [
+            PopupMenuButton(
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 0, child: Text('易经原文')),
+                const PopupMenuItem(value: 1, child: Text('64卦图文')),
+              ],
+              onSelected: (value) => _actionSelected(value),
+            )
+          ],
+        ),
         body: ListView.separated(
             padding: const EdgeInsets.all(_spacing),
             itemBuilder: (conntext, index) => children[index],
@@ -106,6 +121,20 @@ class MyApp extends StatelessWidget {
   int _quyu(int zong, int yu) {
     final qu = zong % yu;
     return qu != 0 ? qu : yu;
+  }
+
+  void _actionSelected(int value) {
+    debugPrint('value = $value');
+    switch (value) {
+      case 0:
+        Navigator.pushNamed(_scaffoldKey.currentContext!, 'yi');
+        break;
+      case 1:
+        Navigator.pushNamed(_scaffoldKey.currentContext!, 'tu');
+        break;
+      default:
+        break;
+    }
   }
 
   void _showTipMaybe(String msg) {
@@ -190,33 +219,33 @@ class MyApp extends StatelessWidget {
     } else if (numberCount == 3) {
       final num1Str = editext3_1.trim();
       if (num1Str.isEmpty) {
-        _showTipMaybe('数字1不能为空');
+        _showTipMaybe('上卦数字不能为空');
         return;
       }
       final num1 = int.tryParse(num1Str);
       if (num1 == null) {
-        _showTipMaybe('数字1只能输入数字');
+        _showTipMaybe('下卦数字只能输入数字');
         return;
       }
       final num2Str = editext3_2.trim();
       if (num2Str.isEmpty) {
-        _showTipMaybe('数字2不能为空');
+        _showTipMaybe('下卦数字不能为空');
         return;
       }
       final num2 = int.tryParse(num2Str);
       if (num2 == null) {
-        _showTipMaybe('数字2只能输入数字');
+        _showTipMaybe('下卦数字只能输入数字');
         return;
       }
 
       final num3Str = editext3_3.trim();
       if (num3Str.isEmpty) {
-        _showTipMaybe('数字3不能为空');
+        _showTipMaybe('变爻数字不能为空');
         return;
       }
       final num3 = int.tryParse(num3Str);
       if (num3 == null) {
-        _showTipMaybe('数字3只能输入数字');
+        _showTipMaybe('变爻数字只能输入数字');
         return;
       }
       final shang = _quyu(num1, 8);
