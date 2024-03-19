@@ -33,7 +33,9 @@ class _PanState extends State<_Pan> {
   }
 
   String _getSkText() {
-    return _chongGua?.tiyong(widget.yi!.dong) ?? '';
+    final dong = widget.yi!.dong;
+    final str = dong > 3 ? '上卦为用，下卦为体；' : '下卦为用，上卦为体；';
+    return str + (_chongGua?.tiyong(dong) ?? '');
   }
 
   void _changeChongGua(ChongGua chongGua) {
