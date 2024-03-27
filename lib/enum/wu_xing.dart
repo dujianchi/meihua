@@ -4,11 +4,11 @@ import 'package:meihua/enum/sheng_ke_bihe.dart';
 /// 五行 - 值
 /// 金木水火土
 enum WuXingZ {
-  jin('金', Colors.yellow),
+  jin('金', Colors.orange),
   mu('木', Colors.green),
   shui('水', Colors.black),
   huo('火', Colors.red),
-  tu('土', Colors.orange),
+  tu('土', Colors.grey),
   ;
 
   final String name;

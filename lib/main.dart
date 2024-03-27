@@ -63,7 +63,49 @@ class MyApp extends StatelessWidget {
       ),
     ));
 
-    children.add(const Center(child: Text('乾一,兑二,离三,震四,巽五,坎六,艮七,坤八')));
+    children.add(Center(
+        child: RichText(
+            text: TextSpan(children: [
+      // 乾一,兑二,离三,震四,巽五,坎六,艮七,坤八
+      TextSpan(
+          text: '☰${BaGua.qian.name}一 ',
+          style: TextStyle(
+            color: BaGua.qian.wuXing.color,
+          )),
+      TextSpan(
+          text: '☱${BaGua.dui.name}二 ',
+          style: TextStyle(
+            color: BaGua.dui.wuXing.color,
+          )),
+      TextSpan(
+          text: '☲${BaGua.li.name}三 ',
+          style: TextStyle(color: BaGua.li.wuXing.color)),
+      TextSpan(
+          text: '☳${BaGua.zhen.name}四 ',
+          style: TextStyle(
+            color: BaGua.zhen.wuXing.color,
+          )),
+      TextSpan(
+          text: '☴${BaGua.xun.name}五 ',
+          style: TextStyle(
+            color: BaGua.xun.wuXing.color,
+          )),
+      TextSpan(
+          text: '☵${BaGua.kan.name}六 ',
+          style: TextStyle(
+            color: BaGua.kan.wuXing.color,
+          )),
+      TextSpan(
+          text: '☶${BaGua.gen.name}七 ',
+          style: TextStyle(
+            color: BaGua.gen.wuXing.color,
+          )),
+      TextSpan(
+          text: '☷${BaGua.kun.name}八 ',
+          style: TextStyle(
+            color: BaGua.kun.wuXing.color,
+          )),
+    ]))));
     children.add(editext3_1);
     children.add(editext3_2);
     children.add(editext3_3);
