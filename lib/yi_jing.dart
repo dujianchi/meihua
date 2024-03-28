@@ -10,7 +10,7 @@ class YiJing extends StatelessWidget {
         title: const Text('易经原文'),
       ),
       body: const Center(
-        child: Text('易经原文'),
+        child: Text('易经原文<开发中>'),
       ),
     );
   }

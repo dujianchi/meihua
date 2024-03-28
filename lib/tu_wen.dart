@@ -10,7 +10,7 @@ class TuWen extends StatelessWidget {
         title: const Text('64卦图文'),
       ),
       body: const Center(
-        child: Text('64卦图文'),
+        child: Text('64卦图文<开发中>'),
       ),
     );
   }
