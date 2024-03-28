@@ -189,12 +189,12 @@ class MyApp extends StatelessWidget {
     }
   }
 
-  void _showTipMaybe(String msg) {
+  void _showTipMaybe(String msg, [int seconds = 2]) {
     final context = _scaffoldKey.currentContext;
     if (context != null) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
         content: Text(msg),
-        duration: const Duration(seconds: 1),
+        duration: Duration(seconds: seconds),
       ));
     }
   }
@@ -309,10 +309,10 @@ class MyApp extends StatelessWidget {
       final num1 = 100 + random.nextInt(100),
           num2 = 100 + random.nextInt(100),
           num3 = 100 + random.nextInt(100);
-      _showTipMaybe('随机数：$num1，$num2，$num3');
       final shang = _quyu(num1, 8);
       final xia = _quyu(num2, 8);
       final dong = _quyu(num3, 6);
+      _showTipMaybe('随机：上卦$shang，下卦$xia，$dong爻动', 3);
       goPan(shang, xia, dong);
     } else {
       throw UnsupportedError('错误的参数');
