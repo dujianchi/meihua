@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
@@ -114,6 +116,14 @@ class MyApp extends StatelessWidget {
       child: ElevatedButton(
         onPressed: () => _calcNumber(3),
         child: const Text('以3数起卦'),
+      ),
+    ));
+
+    children.add(Tooltip(
+      message: '以随机数起卦',
+      child: ElevatedButton(
+        onPressed: () => _calcNumber(0),
+        child: const Text('随机起卦'),
       ),
     ));
 
@@ -290,6 +300,16 @@ class MyApp extends StatelessWidget {
         _showTipMaybe('变爻数字只能输入数字');
         return;
       }
+      final shang = _quyu(num1, 8);
+      final xia = _quyu(num2, 8);
+      final dong = _quyu(num3, 6);
+      goPan(shang, xia, dong);
+    } else if (numberCount == 0) {
+      final random = Random();
+      final num1 = 100 + random.nextInt(100),
+          num2 = 100 + random.nextInt(100),
+          num3 = 100 + random.nextInt(100);
+      _showTipMaybe('随机数：$num1，$num2，$num3');
       final shang = _quyu(num1, 8);
       final xia = _quyu(num2, 8);
       final dong = _quyu(num3, 6);
