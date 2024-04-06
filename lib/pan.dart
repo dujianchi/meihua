@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/entity/yi.dart';
-import 'package:meihua/util/consts.dart';
 import 'package:meihua/widget/chong_gua.dart';
+import 'package:meihua/widget/doc_text_selectable.dart';
 
 import 'widget/lunar_clock.dart';
 
@@ -27,10 +27,6 @@ class _Pan extends StatefulWidget {
 
 class _PanState extends State<_Pan> {
   ChongGua? _chongGua;
-
-  String _getText() {
-    return Consts.chongGuaStr2[_chongGua?.gua()?.name() ?? ''] ?? '';
-  }
 
   String _getSkText() {
     final dong = widget.yi!.dong;
@@ -109,7 +105,7 @@ class _PanState extends State<_Pan> {
         ),
         Padding(
           padding: const EdgeInsets.all(10),
-          child: SelectableText(_getText()),
+          child: DocTextSelectable('src/重卦/${_chongGua?.gua()?.name()}.txt'),
         ),
       ];
       body = SingleChildScrollView(

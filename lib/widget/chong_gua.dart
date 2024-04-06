@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:meihua/entity/gua64.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/enum/sheng_ke_bihe.dart';
-import 'package:meihua/util/consts.dart';
 import 'package:meihua/widget/doc_tooltip.dart';
 import 'package:meihua/widget/gua.dart';
 
