@@ -6,14 +6,12 @@ import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/pan.dart';
 import 'package:meihua/tu_wen.dart';
-import 'package:meihua/util/document.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/lunar_clock.dart';
 import 'package:meihua/yi_jing.dart';
 
 void main() {
   runApp(MyApp());
-  Document.read('src/卦/坎.txt');
 }
 
 class MyApp extends StatelessWidget {
