@@ -3,6 +3,7 @@ import 'package:meihua/entity/gua64.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/enum/sheng_ke_bihe.dart';
 import 'package:meihua/util/consts.dart';
+import 'package:meihua/widget/doc_tooltip.dart';
 import 'package:meihua/widget/gua.dart';
 
 /// 重卦，主卦、互卦、变卦
@@ -97,9 +98,9 @@ class ChongGua extends StatelessWidget {
           ],
         ),
         Center(
-          child: Tooltip(
-            message: Consts.chongGuaStr[name],
-            child: Text(name),
+          child: DocTooltip(
+            document: 'src/重卦/${name}_t.txt',
+            widget: Text(name),
           ),
         ),
       ],

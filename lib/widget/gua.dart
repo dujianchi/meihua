@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/enum/ba_gua.dart';
-import 'package:meihua/util/consts.dart';
+import 'package:meihua/widget/doc_tooltip.dart';
 import 'package:meihua/widget/yao.dart';
 
 /// 先天八卦
 /// 乾一,兑二,离三,震四,巽五,坎六,艮七,坤八
 /// 乾三连，兑上缺，离中虚，震仰盂，巽下断，坎中满，艮覆碗，坤六断
+/// 以占卦的人为中心，南方为离、北方为坎，东方为震、西方为兑、西北为乾、西南为坤、东南为巽、东北为艮。
 class Gua extends StatelessWidget {
   final BaGua? baGua;
   final double spacing;
@@ -146,17 +147,16 @@ class Gua extends StatelessWidget {
             ),
           ),
           Center(
-            child: Tooltip(
-              message: Consts.guaStrs[baGua?.name]?.trim(),
-              child: Text(
-                baGua?.name ?? '',
-                style: TextStyle(
-                  fontSize: 24,
-                  background: Paint()..color = Colors.white24,
-                  foreground: Paint()..color = Colors.blueAccent,
-                ),
-              ),
-            ),
+            child: DocTooltip(
+                document: 'src/卦/${baGua?.name}.txt',
+                widget: Text(
+                  baGua?.name ?? '',
+                  style: TextStyle(
+                    fontSize: 24,
+                    background: Paint()..color = Colors.white24,
+                    foreground: Paint()..color = Colors.blueAccent,
+                  ),
+                )),
           )
         ],
       );
