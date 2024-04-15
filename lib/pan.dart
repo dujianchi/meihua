@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/entity/yi.dart';
+import 'package:meihua/util/document.dart';
 import 'package:meihua/widget/chong_gua.dart';
-import 'package:meihua/widget/doc_text_selectable.dart';
 
 import 'widget/lunar_clock.dart';
 
 class Pan extends StatelessWidget {
   static const double spacing = 3;
   static const double aspectRatio = 2.1;
+  static final _cache = {};
   const Pan({super.key});
+
+  static Future<String?> _getCacheStr(String doc) async {
+    var str = _cache[doc];
+    if (str == null) {
+      str = await Document.read(doc);
+      _cache[doc] = str;
+    }
+    return str;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +37,7 @@ class _Pan extends StatefulWidget {
 
 class _PanState extends State<_Pan> {
   ChongGua? _chongGua;
+  String? _bottomString;
 
   String _getSkText() {
     final dong = widget.yi!.dong;
@@ -35,8 +46,11 @@ class _PanState extends State<_Pan> {
   }
 
   void _changeChongGua(ChongGua chongGua) {
-    setState(() {
-      _chongGua = chongGua;
+    _chongGua = chongGua;
+    Pan._getCacheStr('src/重卦/${chongGua.gua()?.name()}.txt').then((value) {
+      setState(() {
+        _bottomString = value;
+      });
     });
   }
 
@@ -67,7 +81,9 @@ class _PanState extends State<_Pan> {
             bian: widget.yi!.dong,
           );
 
-      _chongGua ??= zhuGua;
+      if (_chongGua == null) {
+        _changeChongGua(zhuGua);
+      }
 
       final zhu = Expanded(
             child: InkWell(
@@ -105,7 +121,7 @@ class _PanState extends State<_Pan> {
         ),
         Padding(
           padding: const EdgeInsets.all(10),
-          child: DocTextSelectable('src/重卦/${_chongGua?.gua()?.name()}.txt'),
+          child: SelectableText(_bottomString ?? ''),
         ),
       ];
       body = SingleChildScrollView(
