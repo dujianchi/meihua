@@ -23,3 +23,23 @@ extension IntExt on int {
     return BaGua.fromValue(g);
   }
 }
+
+extension IntExtNullable on int? {
+  DateTime? date() {
+    if (this != null) {
+      return DateTime.fromMillisecondsSinceEpoch(this!);
+    } else {
+      return null;
+    }
+  }
+
+  String dateStr() {
+    return date()?.toString() ?? '';
+  }
+}
+
+extension StringExtNullable on String? {
+  String or([String defalutStr = '']) {
+    return this ?? defalutStr;
+  }
+}
