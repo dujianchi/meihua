@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
+import 'package:meihua/history.dart';
 import 'package:meihua/pan.dart';
 import 'package:meihua/tu_wen.dart';
+import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/lunar_clock.dart';
 import 'package:meihua/yi_jing.dart';
@@ -136,6 +138,7 @@ class MyApp extends StatelessWidget {
         'pan': (context) => const Pan(),
         'yi': (context) => const YiJing(),
         'tu': (context) => const TuWen(),
+        'ls': (context) => const History(),
       },
       home: Scaffold(
         key: _scaffoldKey,
@@ -171,11 +174,6 @@ class MyApp extends StatelessWidget {
             dong: dong == 0 ? 6 : dong));
   }
 
-  int _quyu(int zong, int yu) {
-    final qu = zong % yu;
-    return qu != 0 ? qu : yu;
-  }
-
   void _actionSelected(int value) {
     debugPrint('value = $value');
     switch (value) {
@@ -184,6 +182,9 @@ class MyApp extends StatelessWidget {
         break;
       case 1:
         Navigator.pushNamed(_scaffoldKey.currentContext!, 'tu');
+        break;
+      case 2:
+        Navigator.pushNamed(_scaffoldKey.currentContext!, 'ls');
         break;
       default:
         break;
@@ -213,9 +214,9 @@ class MyApp extends StatelessWidget {
 
     debugPrint('year = $year, month = $month, day = $day, hour = $hour');
 
-    final shang = _quyu(year + month + day, 8);
-    final xia = _quyu(shang + hour, 8);
-    final dong = _quyu(shang + hour, 6);
+    final shang = (year + month + day).gua();
+    final xia = (shang + hour).gua();
+    final dong = (shang + hour).yao();
 
     debugPrint('shang = $shang, xia = $xia, dong = $dong');
     debugPrint(
@@ -238,10 +239,10 @@ class MyApp extends StatelessWidget {
       }
       final lunar = Lunar.fromDate(DateTime.now());
       final hour = lunar.getTimeZhiIndex() + 1;
-      final shang = _quyu(num1, 8);
+      final shang = num1.gua();
       final zong = num1 + hour;
-      final xia = _quyu(zong, 8);
-      final dong = _quyu(zong, 6);
+      final xia = zong.gua();
+      final dong = zong.yao();
       goPan(shang, xia, dong);
     } else if (numberCount == 2) {
       final num1Str = editext2_1.trim();
@@ -264,10 +265,10 @@ class MyApp extends StatelessWidget {
         _showTipMaybe('数字2只能输入数字');
         return;
       }
-      final shang = _quyu(num1, 8);
+      final shang = num1.gua();
       final zong = num1 + num2;
-      final xia = _quyu(zong, 8);
-      final dong = _quyu(zong, 6);
+      final xia = zong.gua();
+      final dong = zong.yao();
       goPan(shang, xia, dong);
     } else if (numberCount == 3) {
       final num1Str = editext3_1.trim();
@@ -301,18 +302,18 @@ class MyApp extends StatelessWidget {
         _showTipMaybe('变爻数字只能输入数字');
         return;
       }
-      final shang = _quyu(num1, 8);
-      final xia = _quyu(num2, 8);
-      final dong = _quyu(num3, 6);
+      final shang = num1.gua();
+      final xia = num2.gua();
+      final dong = num3.yao();
       goPan(shang, xia, dong);
     } else if (numberCount == 0) {
       final random = Random();
       final num1 = 100 + random.nextInt(100),
           num2 = 100 + random.nextInt(100),
           num3 = 100 + random.nextInt(100);
-      final shang = _quyu(num1, 8);
-      final xia = _quyu(num2, 8);
-      final dong = _quyu(num3, 6);
+      final shang = num1.gua();
+      final xia = num2.gua();
+      final dong = num3.yao();
       _showTipMaybe('随机：上卦$shang，下卦$xia，$dong爻动', 3);
       goPan(shang, xia, dong);
     } else {
