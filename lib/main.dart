@@ -146,6 +146,7 @@ class MyApp extends StatelessWidget {
               itemBuilder: (context) => [
                 const PopupMenuItem(value: 0, child: Text('易经原文')),
                 const PopupMenuItem(value: 1, child: Text('64卦图文')),
+                const PopupMenuItem(value: 2, child: Text('排盘历史')),
               ],
               onSelected: (value) => _actionSelected(value),
             )
