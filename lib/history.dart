@@ -43,7 +43,7 @@ class _HistoryListState extends State<_HistoryList> {
     return ListView.builder(
       itemBuilder: (context, index) {
         final item = historyList[index];
-        /*
+/*
 CREATE TABLE $dbName (
 	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
 	`save_date` INTEGER,
@@ -54,15 +54,15 @@ CREATE TABLE $dbName (
 	`title` TEXT NOT NULL,
 	`describe` TEXT
 );
-        */
+*/
         final id = item['id'] as int;
-        final saveDate = item['save_date'] as int;
-        final lunarDate = item['lunar_date'] as String;
+        final saveDate = item['save_date'] as int?;
+        final lunarDate = item['lunar_date'] as String?;
         final shang = item['shang'] as int;
         final xia = item['xia'] as int;
         final bian = item['bian'] as int;
         final title = item['title'] as String;
-        final describe = item['describe'] as String;
+        final describe = item['describe'] as String?;
         return Column(
           children: [
             Text(title),
@@ -74,8 +74,8 @@ CREATE TABLE $dbName (
                 Text('变爻:${bian.yao()}'),
               ],
             ),
-            Text('时间:${DateTime.fromMillisecondsSinceEpoch(saveDate)}'),
-            Text('农历时间:$lunarDate'),
+            Text('时间:${saveDate.dateStr()}'),
+            Text('农历时间:${lunarDate.or()}'),
           ],
         );
       },

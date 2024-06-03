@@ -1,8 +1,8 @@
 import 'package:lunar/lunar.dart';
 import 'package:sqflite/sqflite.dart';
 
-typedef DatabaseExec = Function(Database db);
-typedef StatementExec = Function(Transaction txn);
+typedef DatabaseExec = Future<void> Function(Database db);
+typedef StatementExec = Future<void> Function(Transaction txn);
 
 class DbHelper {
   static final DbHelper _instance = DbHelper._internal();
@@ -35,15 +35,15 @@ CREATE TABLE $dbName (
       },
       onUpgrade: (db, oldVersion, newVersion) {},
     );
-    exec(database);
+    await exec(database);
     database.close();
   }
 
   void transaction(StatementExec exec) async {
-    database((db) {
-      db.transaction(
+    database((db) async {
+      await db.transaction(
         (txn) async {
-          exec(txn);
+          await exec(txn);
         },
       );
     });
