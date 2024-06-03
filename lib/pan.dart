@@ -131,8 +131,29 @@ class _PanState extends State<_Pan> {
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('梅花易数盘')),
+      appBar: AppBar(
+        title: const Text('梅花易数盘'),
+        actions: [
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 0, child: Text('保存')),
+            ],
+            onSelected: (value) => _actionSelected(value),
+          )
+        ],
+      ),
       body: body,
     );
+  }
+
+  void _actionSelected(int value) {
+    debugPrint('value = $value');
+    switch (value) {
+      case 0:
+        // todo 保存数据，要有弹窗
+        break;
+      default:
+        break;
+    }
   }
 }
