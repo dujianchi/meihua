@@ -1,4 +1,5 @@
 import 'package:get/route_manager.dart';
+import 'package:get/utils.dart';
 import 'package:meihua/enum/ba_gua.dart';
 
 extension IntExt on int {
@@ -44,8 +45,15 @@ extension StringExtNullable on String? {
     return this ?? defalutStr;
   }
 
-  void toast([int duration = 2]) {
+  void toast([int duration = 2]) async {
     if (this?.isNotEmpty == true) {
+      if (SnackbarController.isSnackbarBeingShown) {
+        try {
+          await SnackbarController.closeCurrentSnackbar();
+        } catch (e) {
+          e.printError();
+        }
+      }
       Get.showSnackbar(GetSnackBar(
         message: this,
         duration: Duration(seconds: duration),
