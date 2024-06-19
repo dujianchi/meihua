@@ -188,7 +188,9 @@ class _PanState extends State<_Pan> {
               ),
               actions: [
                 TextButton(
-                    onPressed: () => Get.back(), child: const Text('取消')),
+                    onPressed: () =>
+                        Get.until((route) => Get.isDialogOpen != true),
+                    child: const Text('取消')),
                 TextButton(
                     onPressed: () {
                       final titleText = title.text();
@@ -203,7 +205,7 @@ class _PanState extends State<_Pan> {
                           saveDate: DateTime.now().millisecondsSinceEpoch,
                           describe: desc.text(),
                         );
-                        Get.back();
+                        Get.until((route) => Get.isDialogOpen != true);
                         '保存成功'.toast();
                       }
                     },

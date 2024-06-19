@@ -99,6 +99,33 @@ CREATE TABLE $dbName (
               ),
             );
           },
+          onLongPress: () {
+            Get.generalDialog(
+              pageBuilder: (context, animation1, animation2) => AlertDialog(
+                title: const Text('删除'),
+                content: Text('确定删除$title吗'),
+                actions: [
+                  TextButton(
+                      onPressed: () =>
+                          Get.until((route) => Get.isDialogOpen != true),
+                      child: const Text('取消')),
+                  TextButton(
+                      onPressed: () {
+                        DbHelper.transaction((db) async {
+                          await db.delete(DbHelper.dbName,
+                              where: "id = ?", whereArgs: [id]);
+                          setState(() {
+                            historyList.removeAt(index);
+                          });
+                        });
+                        Get.until((route) => Get.isDialogOpen != true);
+                        '删除成功'.toast();
+                      },
+                      child: const Text('删除'))
+                ],
+              ),
+            );
+          },
         );
       },
       itemCount: historyList.length,
