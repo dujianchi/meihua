@@ -1,3 +1,4 @@
+import 'package:get/route_manager.dart';
 import 'package:meihua/enum/ba_gua.dart';
 
 extension IntExt on int {
@@ -41,5 +42,14 @@ extension IntExtNullable on int? {
 extension StringExtNullable on String? {
   String or([String defalutStr = '']) {
     return this ?? defalutStr;
+  }
+
+  void toast([int duration = 2]) {
+    if (this?.isNotEmpty == true) {
+      Get.showSnackbar(GetSnackBar(
+        message: this,
+        duration: Duration(seconds: duration),
+      ));
+    }
   }
 }

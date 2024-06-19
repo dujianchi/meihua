@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
+import 'package:meihua/entity/yi.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 
@@ -27,8 +29,8 @@ class _HistoryListState extends State<_HistoryList> {
   @override
   void initState() {
     historyList.clear();
-    DbHelper().transaction((db) async {
-      final list = await db.query(DbHelper.dbName);
+    DbHelper.transaction((db) async {
+      final list = await db.query(DbHelper.dbName, orderBy: 'id desc');
       setState(() {
         if (list.isNotEmpty) {
           historyList.addAll(list);
@@ -40,7 +42,7 @@ class _HistoryListState extends State<_HistoryList> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return ListView.separated(
       itemBuilder: (context, index) {
         final item = historyList[index];
 /*
@@ -63,23 +65,47 @@ CREATE TABLE $dbName (
         final bian = item['bian'] as int;
         final title = item['title'] as String;
         final describe = item['describe'] as String?;
-        return Column(
-          children: [
-            Text(title),
-            Row(
-              children: [
-                Text('id:$id'),
-                Text('上卦:${shang.baGua().name}'),
-                Text('下卦:${xia.baGua().name}'),
-                Text('变爻:${bian.yao()}'),
-              ],
-            ),
-            Text('时间:${saveDate.dateStr()}'),
-            Text('农历时间:${lunarDate.or()}'),
-          ],
+        final contentChildren = [
+          Text(title, style: const TextStyle(color: Colors.redAccent)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Text('id: $id'),
+              Text('上卦: ${shang.baGua().name}'),
+              Text('下卦: ${xia.baGua().name}'),
+              Text('变爻: ${bian.yao()}'),
+            ],
+          ),
+          Text('时间: ${saveDate.dateStr()}'),
+          Text('农历时间: ${lunarDate.or()}'),
+        ];
+        if (describe?.isNotEmpty == true) {
+          contentChildren.add(Text(describe!));
+        }
+        return ListTile(
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: contentChildren,
+          ),
+          onTap: () {
+            Get.toNamed(
+              'pan',
+              arguments: Yi(
+                shang: shang == 0 ? 8 : shang,
+                xia: xia == 0 ? 8 : xia,
+                dong: bian == 0 ? 6 : bian,
+                historyDate: '${saveDate.dateStr()}\n($lunarDate)',
+              ),
+            );
+          },
         );
       },
       itemCount: historyList.length,
+      separatorBuilder: (BuildContext context, int index) => const Divider(
+        color: Colors.grey,
+        thickness: 0.1,
+      ),
     );
   }
 }

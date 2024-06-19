@@ -3,22 +3,25 @@ import 'package:flutter/services.dart';
 
 class EditText extends StatelessWidget {
   final String _label;
+  final int? maxLines;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
 
   final TextEditingController _textChanged = TextEditingController();
-  EditText(
-      {super.key,
-      required String label,
-      this.keyboardType,
-      this.inputFormatters})
-      : _label = label;
+  EditText({
+    super.key,
+    required String label,
+    this.keyboardType,
+    this.inputFormatters,
+    this.maxLines,
+  }) : _label = label;
 
   String text() => _textChanged.text;
   String trim() => text().trim();
 
   @override
   Widget build(BuildContext context) => TextField(
+        maxLines: maxLines,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
         controller: _textChanged,

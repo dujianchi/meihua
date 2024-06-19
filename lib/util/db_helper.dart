@@ -12,7 +12,7 @@ class DbHelper {
   }
   static const dbName = 'pan_history';
 
-  void database(DatabaseExec exec) async {
+  static void database(DatabaseExec exec) async {
     var databasesPath = await getDatabasesPath();
     String path = '$databasesPath/database.db';
     Database database = await openDatabase(
@@ -39,7 +39,7 @@ CREATE TABLE $dbName (
     database.close();
   }
 
-  void transaction(StatementExec exec) async {
+  static void transaction(StatementExec exec) async {
     database((db) async {
       await db.transaction(
         (txn) async {
@@ -49,7 +49,7 @@ CREATE TABLE $dbName (
     });
   }
 
-  void save({
+  static void save({
     required int shang,
     required int xia,
     required int bian,
