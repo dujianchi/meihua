@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
 import 'package:meihua/entity/yi.dart';
+import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/document.dart';
+import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/chong_gua.dart';
+import 'package:meihua/widget/edit_text.dart';
 
 import 'widget/lunar_clock.dart';
 
@@ -59,7 +63,7 @@ class _PanState extends State<_Pan> {
     final Widget body;
     if (widget.yi == null) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        Navigator.of(context).pushReplacementNamed('/');
+        Get.offAllNamed('/');
       });
       body = const SizedBox.shrink();
     } else {
@@ -124,23 +128,35 @@ class _PanState extends State<_Pan> {
           child: SelectableText(_bottomString ?? ''),
         ),
       ];
+      final sealDate = widget.yi?.historyDate;
+      if (sealDate?.isNotEmpty == true) {
+        children.insert(
+            0,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: SelectableText('卜卦日期: $sealDate'),
+            ));
+      }
       body = SingleChildScrollView(
         child: Column(
           children: children,
         ),
       );
     }
+    final actions = widget.yi?.historyDate?.isNotEmpty == true
+        ? <Widget>[]
+        : [
+            PopupMenuButton(
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 0, child: Text('保存')),
+              ],
+              onSelected: (value) => _actionSelected(value),
+            )
+          ];
     return Scaffold(
       appBar: AppBar(
         title: const Text('梅花易数盘'),
-        actions: [
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 0, child: Text('保存')),
-            ],
-            onSelected: (value) => _actionSelected(value),
-          )
-        ],
+        actions: actions,
       ),
       body: body,
     );
@@ -151,6 +167,52 @@ class _PanState extends State<_Pan> {
     switch (value) {
       case 0:
         // todo 保存数据，要有弹窗
+        final yi = widget.yi;
+        if (yi == null) {
+          '数据为空'.toast();
+        } else {
+          final title = EditText(label: '标题'),
+              desc = EditText(
+                label: '详细说明',
+                maxLines: 3,
+              );
+          Get.generalDialog(
+            pageBuilder: (context, animation1, animation2) => AlertDialog(
+              title: const Text('保存'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  title,
+                  desc,
+                ],
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () => Get.back(), child: const Text('取消')),
+                TextButton(
+                    onPressed: () {
+                      final titleText = title.text();
+                      if (titleText.isEmpty) {
+                        '标题不能为空'.toast();
+                      } else {
+                        DbHelper.save(
+                          shang: yi.shang,
+                          xia: yi.xia,
+                          bian: yi.dong,
+                          title: titleText,
+                          saveDate: DateTime.now().millisecondsSinceEpoch,
+                          describe: desc.text(),
+                        );
+                        Get.back();
+                        '保存成功'.toast();
+                      }
+                    },
+                    child: const Text('保存')),
+              ],
+              scrollable: true,
+            ),
+          );
+        }
         break;
       default:
         break;

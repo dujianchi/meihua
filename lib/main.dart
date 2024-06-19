@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
@@ -18,7 +19,6 @@ void main() {
 
 class MyApp extends StatelessWidget {
   static const _spacing = 10.0;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final editext1_1 = EditTextNum(label: '数字1'),
       editext2_1 = EditTextNum(label: '数字1'),
       editext2_2 = EditTextNum(label: '数字2'),
@@ -129,7 +129,7 @@ class MyApp extends StatelessWidget {
       ),
     ));
 
-    return MaterialApp(
+    return GetMaterialApp(
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -141,7 +141,6 @@ class MyApp extends StatelessWidget {
         'ls': (context) => const History(),
       },
       home: Scaffold(
-        key: _scaffoldKey,
         appBar: AppBar(
           title: const Text('梅花易数排盘'),
           actions: [
@@ -167,7 +166,7 @@ class MyApp extends StatelessWidget {
   }
 
   void goPan(int shang, int xia, int dong) {
-    Navigator.of(_scaffoldKey.currentContext!).pushNamed('pan',
+    Get.toNamed('pan',
         arguments: Yi(
             shang: shang == 0 ? 8 : shang,
             xia: xia == 0 ? 8 : xia,
@@ -178,26 +177,16 @@ class MyApp extends StatelessWidget {
     debugPrint('value = $value');
     switch (value) {
       case 0:
-        Navigator.pushNamed(_scaffoldKey.currentContext!, 'yi');
+        Get.toNamed('yi');
         break;
       case 1:
-        Navigator.pushNamed(_scaffoldKey.currentContext!, 'tu');
+        Get.toNamed('tu');
         break;
       case 2:
-        Navigator.pushNamed(_scaffoldKey.currentContext!, 'ls');
+        Get.toNamed('ls');
         break;
       default:
         break;
-    }
-  }
-
-  void _showTipMaybe(String msg, [int seconds = 2]) {
-    final context = _scaffoldKey.currentContext;
-    if (context != null) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-        content: Text(msg),
-        duration: Duration(seconds: seconds),
-      ));
     }
   }
 
@@ -229,12 +218,12 @@ class MyApp extends StatelessWidget {
     if (numberCount == 1) {
       final num1Str = editext1_1.trim();
       if (num1Str.isEmpty) {
-        _showTipMaybe('数字1不能为空');
+        '数字1不能为空'.toast();
         return;
       }
       final num1 = int.tryParse(num1Str);
       if (num1 == null) {
-        _showTipMaybe('只能输入数字');
+        '只能输入数字'.toast();
         return;
       }
       final lunar = Lunar.fromDate(DateTime.now());
@@ -247,22 +236,22 @@ class MyApp extends StatelessWidget {
     } else if (numberCount == 2) {
       final num1Str = editext2_1.trim();
       if (num1Str.isEmpty) {
-        _showTipMaybe('数字1不能为空');
+        '数字1不能为空'.toast();
         return;
       }
       final num1 = int.tryParse(num1Str);
       if (num1 == null) {
-        _showTipMaybe('数字1只能输入数字');
+        '数字1只能输入数字'.toast();
         return;
       }
       final num2Str = editext2_2.trim();
       if (num2Str.isEmpty) {
-        _showTipMaybe('数字2不能为空');
+        '数字2不能为空'.toast();
         return;
       }
       final num2 = int.tryParse(num2Str);
       if (num2 == null) {
-        _showTipMaybe('数字2只能输入数字');
+        '数字2只能输入数字'.toast();
         return;
       }
       final shang = num1.gua();
@@ -273,33 +262,33 @@ class MyApp extends StatelessWidget {
     } else if (numberCount == 3) {
       final num1Str = editext3_1.trim();
       if (num1Str.isEmpty) {
-        _showTipMaybe('上卦数字不能为空');
+        '上卦数字不能为空'.toast();
         return;
       }
       final num1 = int.tryParse(num1Str);
       if (num1 == null) {
-        _showTipMaybe('下卦数字只能输入数字');
+        '下卦数字只能输入数字'.toast();
         return;
       }
       final num2Str = editext3_2.trim();
       if (num2Str.isEmpty) {
-        _showTipMaybe('下卦数字不能为空');
+        '下卦数字不能为空'.toast();
         return;
       }
       final num2 = int.tryParse(num2Str);
       if (num2 == null) {
-        _showTipMaybe('下卦数字只能输入数字');
+        '下卦数字只能输入数字'.toast();
         return;
       }
 
       final num3Str = editext3_3.trim();
       if (num3Str.isEmpty) {
-        _showTipMaybe('变爻数字不能为空');
+        '变爻数字不能为空'.toast();
         return;
       }
       final num3 = int.tryParse(num3Str);
       if (num3 == null) {
-        _showTipMaybe('变爻数字只能输入数字');
+        '变爻数字只能输入数字'.toast();
         return;
       }
       final shang = num1.gua();
@@ -314,7 +303,7 @@ class MyApp extends StatelessWidget {
       final shang = num1.gua();
       final xia = num2.gua();
       final dong = num3.yao();
-      _showTipMaybe('随机：上卦$shang，下卦$xia，$dong爻动', 3);
+      '随机：上卦$shang，下卦$xia，$dong爻动'.toast(3);
       goPan(shang, xia, dong);
     } else {
       throw UnsupportedError('错误的参数');
