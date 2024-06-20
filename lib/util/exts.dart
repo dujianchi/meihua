@@ -1,5 +1,6 @@
 import 'package:get/route_manager.dart';
 import 'package:get/utils.dart';
+import 'package:lunar/lunar.dart';
 import 'package:meihua/enum/ba_gua.dart';
 
 extension IntExt on int {
@@ -41,10 +42,12 @@ extension IntExtNullable on int? {
 }
 
 extension StringExtNullable on String? {
+  /// 字符串为null处理
   String or([String defalutStr = '']) {
     return this ?? defalutStr;
   }
 
+  /// toast一个字符串
   void toast([int duration = 2]) async {
     if (this?.isNotEmpty == true) {
       if (SnackbarController.isSnackbarBeingShown) {
@@ -60,4 +63,10 @@ extension StringExtNullable on String? {
       ));
     }
   }
+}
+
+extension LunarExt on Lunar {
+  /// 当前时间的农历格式化
+  String niceStr() =>
+      '${getYearGan()}${getYearZhi()}年 ${getMonthInChinese()}月 ${getDayInChinese()}日 ${getTimeZhi()}时 ${getSeason()}';
 }

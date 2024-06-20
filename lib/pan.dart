@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/document.dart';
@@ -27,13 +28,14 @@ class Pan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final yi = ModalRoute.of(context)?.settings.arguments as Yi?;
-    return _Pan(yi);
+    return _Pan(yi, DateTime.now());
   }
 }
 
 class _Pan extends StatefulWidget {
   final Yi? yi;
-  const _Pan(this.yi);
+  final DateTime now;
+  const _Pan(this.yi, this.now);
 
   @override
   State<StatefulWidget> createState() => _PanState();
@@ -212,7 +214,8 @@ class _PanState extends State<_Pan> {
                           xia: yi.xia,
                           bian: yi.dong,
                           title: _titleStr!,
-                          saveDate: DateTime.now().millisecondsSinceEpoch,
+                          saveDate: widget.now.millisecondsSinceEpoch,
+                          lunarDate: Lunar.fromDate(widget.now).niceStr(),
                           describe: _descStr,
                         );
                         Get.until((route) => Get.isDialogOpen != true);
