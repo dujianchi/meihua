@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lunar/lunar.dart';
+import 'package:meihua/util/exts.dart';
 
 /// 农历时间显示
 class LunarClock extends StatefulWidget {
@@ -38,7 +39,7 @@ class _LunarClockState extends State<LunarClock> {
   Widget build(BuildContext context) {
     final lunar = Lunar.fromDate(_current);
     return SelectableText(
-      '当前农历时间: ${lunar.getYearGan()}${lunar.getYearZhi()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}日 ${lunar.getTimeZhi()}时 ${lunar.getSeason()}',
+      '当前农历时间: ${lunar.niceStr()}',
       // style: const TextStyle(fontSize: 20.0),
     );
   }

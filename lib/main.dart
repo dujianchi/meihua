@@ -193,7 +193,7 @@ class MyApp extends StatelessWidget {
   void _calcCurrentDatetime() {
     final lunar = Lunar.fromDate(DateTime.now());
     Text(
-      '${lunar.getYearGan()}${lunar.getYearZhi()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}日 ${lunar.getTimeZhi()}时',
+      lunar.niceStr(),
       // style: const TextStyle(fontSize: 20.0),
     );
     final year = lunar.getYearZhiIndex() + 1,

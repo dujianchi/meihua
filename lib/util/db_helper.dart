@@ -1,4 +1,5 @@
 import 'package:lunar/lunar.dart';
+import 'package:meihua/util/exts.dart';
 import 'package:sqflite/sqflite.dart';
 
 typedef DatabaseExec = Future<void> Function(Database db);
@@ -13,8 +14,8 @@ class DbHelper {
   static const dbName = 'pan_history';
 
   static void database(DatabaseExec exec) async {
-    var databasesPath = await getDatabasesPath();
-    String path = '$databasesPath/database.db';
+    final databasesPath = await getDatabasesPath();
+    final path = '$databasesPath/database.db';
     Database database = await openDatabase(
       path,
       version: 1,
@@ -62,8 +63,7 @@ CREATE TABLE $dbName (
     saveDate ??= now.millisecondsSinceEpoch;
     if (lunarDate == null) {
       final lunar = Lunar.fromDate(now);
-      lunarDate =
-          '${lunar.getYearGan()}${lunar.getYearZhi()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}日 ${lunar.getTimeZhi()}时 ${lunar.getSeason()}';
+      lunarDate = lunar.niceStr();
     }
     transaction((db) => db.insert(dbName, {
           'save_date': saveDate,
