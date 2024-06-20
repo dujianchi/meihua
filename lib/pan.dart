@@ -41,7 +41,7 @@ class _Pan extends StatefulWidget {
 
 class _PanState extends State<_Pan> {
   ChongGua? _chongGua;
-  String? _bottomString;
+  String? _bottomString, _titleStr, _descStr;
 
   String _getSkText() {
     final dong = widget.yi!.dong;
@@ -146,12 +146,14 @@ class _PanState extends State<_Pan> {
     final actions = widget.yi?.historyDate?.isNotEmpty == true
         ? <Widget>[]
         : [
-            PopupMenuButton(
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 0, child: Text('保存')),
-              ],
-              onSelected: (value) => _actionSelected(value),
-            )
+            // PopupMenuButton(
+            //   itemBuilder: (context) => [
+            //     const PopupMenuItem(value: 0, child: Text('保存')),
+            //   ],
+            //   onSelected: (value) => _actionSelected(value),
+            // )
+            TextButton(
+                onPressed: () => _actionSelected(0), child: const Text('保存'))
           ];
     return Scaffold(
       appBar: AppBar(
@@ -171,10 +173,14 @@ class _PanState extends State<_Pan> {
         if (yi == null) {
           '数据为空'.toast();
         } else {
-          final title = EditText(label: '标题'),
+          final title = EditText(
+                label: '标题',
+                defaultStr: _titleStr,
+              ),
               desc = EditText(
                 label: '详细说明',
                 maxLines: 3,
+                defaultStr: _descStr,
               );
           Get.generalDialog(
             pageBuilder: (context, animation1, animation2) => AlertDialog(
@@ -188,22 +194,26 @@ class _PanState extends State<_Pan> {
               ),
               actions: [
                 TextButton(
-                    onPressed: () =>
-                        Get.until((route) => Get.isDialogOpen != true),
+                    onPressed: () {
+                      _titleStr = title.text();
+                      _descStr = desc.text();
+                      Get.until((route) => Get.isDialogOpen != true);
+                    },
                     child: const Text('取消')),
                 TextButton(
                     onPressed: () {
-                      final titleText = title.text();
-                      if (titleText.isEmpty) {
+                      _titleStr = title.text();
+                      _descStr = desc.text();
+                      if (_titleStr!.isEmpty) {
                         '标题不能为空'.toast();
                       } else {
                         DbHelper.save(
                           shang: yi.shang,
                           xia: yi.xia,
                           bian: yi.dong,
-                          title: titleText,
+                          title: _titleStr!,
                           saveDate: DateTime.now().millisecondsSinceEpoch,
-                          describe: desc.text(),
+                          describe: _descStr,
                         );
                         Get.until((route) => Get.isDialogOpen != true);
                         '保存成功'.toast();
