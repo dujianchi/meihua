@@ -70,17 +70,19 @@ CREATE TABLE $dbName (
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Text('id: $id'),
+              // Text('id: $id'),
               Text('上卦: ${shang.baGua().name}'),
               Text('下卦: ${xia.baGua().name}'),
               Text('变爻: ${bian.yao()}'),
             ],
           ),
-          Text('时间: ${saveDate.dateStr()}'),
-          Text('农历时间: ${lunarDate.or()}'),
+          Text('时间: ${saveDate.dateStr()}',
+              style: const TextStyle(color: Colors.blueGrey)),
+          Text('农历时间: ${lunarDate.or()}',
+              style: const TextStyle(color: Colors.blueGrey)),
         ];
         if (describe?.isNotEmpty == true) {
-          contentChildren.add(Text(describe!));
+          contentChildren.add(Text('详细说明: $describe', style: const TextStyle(color: Colors.blueAccent)));
         }
         return ListTile(
           title: Column(
@@ -131,7 +133,8 @@ CREATE TABLE $dbName (
       itemCount: historyList.length,
       separatorBuilder: (BuildContext context, int index) => const Divider(
         color: Colors.grey,
-        thickness: 0.1,
+        thickness: 0,
+        height: 0.1,
       ),
     );
   }

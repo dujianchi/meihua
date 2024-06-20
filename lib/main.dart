@@ -303,7 +303,7 @@ class MyApp extends StatelessWidget {
       final shang = num1.gua();
       final xia = num2.gua();
       final dong = num3.yao();
-      '随机：上卦$shang，下卦$xia，$dong爻动'.toast(3);
+      '随机：上卦$shang，下卦$xia，$dong爻动'.toast(10);
       goPan(shang, xia, dong);
     } else {
       throw UnsupportedError('错误的参数');
