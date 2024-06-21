@@ -13,7 +13,7 @@ class DbHelper {
   }
   static const dbName = 'pan_history';
 
-  static void database(DatabaseExec exec) async {
+  static Future<void> database(DatabaseExec exec) async {
     final databasesPath = await getDatabasesPath();
     final path = '$databasesPath/database.db';
     Database database = await openDatabase(
@@ -37,11 +37,11 @@ CREATE TABLE $dbName (
       onUpgrade: (db, oldVersion, newVersion) {},
     );
     await exec(database);
-    database.close();
+    await database.close();
   }
 
-  static void transaction(StatementExec exec) async {
-    database((db) async {
+  static Future<void> transaction(StatementExec exec) async {
+    await database((db) async {
       await db.transaction(
         (txn) async {
           await exec(txn);
@@ -50,7 +50,7 @@ CREATE TABLE $dbName (
     });
   }
 
-  static void save({
+  static Future<void> save({
     required int shang,
     required int xia,
     required int bian,
@@ -58,21 +58,38 @@ CREATE TABLE $dbName (
     int? saveDate,
     String? lunarDate,
     String? describe,
-  }) {
+  }) async {
     final now = DateTime.now();
     saveDate ??= now.millisecondsSinceEpoch;
     if (lunarDate == null) {
       final lunar = Lunar.fromDate(now);
       lunarDate = lunar.niceStr();
     }
-    transaction((db) => db.insert(dbName, {
-          'save_date': saveDate,
-          'lunar_date': lunarDate,
-          'shang': shang,
-          'xia': xia,
-          'bian': bian,
-          'title': title,
-          'describe': describe,
-        }));
+    await transaction((db) async {
+      await db.insert(dbName, {
+        'save_date': saveDate,
+        'lunar_date': lunarDate,
+        'shang': shang,
+        'xia': xia,
+        'bian': bian,
+        'title': title,
+        'describe': describe,
+      });
+    });
+  }
+
+  static Future<void> update(int id, {String? title, String? describe}) async {
+    if (title == describe && describe == null) return;
+    final values = <String, dynamic>{};
+    if (title != null) {
+      values['title'] = title;
+    }
+    if (describe != null) {
+      values['describe'] = describe;
+    }
+    await transaction((db) async {
+      await db
+          .update(DbHelper.dbName, values, where: "id = ?", whereArgs: [id]);
+    });
   }
 }

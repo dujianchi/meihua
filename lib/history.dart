@@ -3,6 +3,7 @@ import 'package:get/route_manager.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
+import 'package:meihua/widget/edit_text.dart';
 
 class History extends StatelessWidget {
   const History({super.key});
@@ -28,15 +29,7 @@ class _HistoryListState extends State<_HistoryList> {
 
   @override
   void initState() {
-    historyList.clear();
-    DbHelper.transaction((db) async {
-      final list = await db.query(DbHelper.dbName, orderBy: 'id desc');
-      setState(() {
-        if (list.isNotEmpty) {
-          historyList.addAll(list);
-        }
-      });
-    });
+    _loadData();
     super.initState();
   }
 
@@ -82,7 +75,8 @@ CREATE TABLE $dbName (
               style: const TextStyle(color: Colors.blueGrey)),
         ];
         if (describe?.isNotEmpty == true) {
-          contentChildren.add(Text('详细说明: $describe', style: const TextStyle(color: Colors.blueAccent)));
+          contentChildren.add(Text('详细说明: $describe',
+              style: const TextStyle(color: Colors.blueAccent)));
         }
         return ListTile(
           title: Column(
@@ -102,31 +96,28 @@ CREATE TABLE $dbName (
             );
           },
           onLongPress: () {
-            Get.generalDialog(
-              pageBuilder: (context, animation1, animation2) => AlertDialog(
-                title: const Text('删除'),
-                content: Text('确定删除$title吗'),
-                actions: [
-                  TextButton(
-                      onPressed: () =>
-                          Get.until((route) => Get.isDialogOpen != true),
-                      child: const Text('取消')),
-                  TextButton(
-                      onPressed: () {
-                        DbHelper.transaction((db) async {
-                          await db.delete(DbHelper.dbName,
-                              where: "id = ?", whereArgs: [id]);
-                          setState(() {
-                            historyList.removeAt(index);
-                          });
-                        });
-                        Get.until((route) => Get.isDialogOpen != true);
-                        '删除成功'.toast();
-                      },
-                      child: const Text('删除'))
-                ],
-              ),
-            );
+            Get.bottomSheet(BottomSheet(
+                clipBehavior: Clip.antiAlias,
+                onClosing: () {},
+                builder: (context) {
+                  // _delete(id, title, index);
+                  final children = <Widget>[
+                    ListTile(
+                      title: const Text('编辑'),
+                      onTap: () => _edit(id, title, describe),
+                    ),
+                    ListTile(
+                      title: const Text(
+                        '删除',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                      onTap: () => _delete(id, title, index),
+                    ),
+                  ];
+                  return Wrap(
+                    children: children,
+                  );
+                }));
           },
         );
       },
@@ -137,5 +128,92 @@ CREATE TABLE $dbName (
         height: 0.1,
       ),
     );
+  }
+
+  void _delete(int id, String title, int index) {
+    Get.until((route) => Get.isBottomSheetOpen != true);
+    Get.generalDialog(
+      pageBuilder: (context, animation1, animation2) => AlertDialog(
+        title: const Text('删除'),
+        content: Text('确定删除$title吗'),
+        actions: [
+          TextButton(
+              onPressed: () => Get.until((route) => Get.isDialogOpen != true),
+              child: const Text('取消')),
+          TextButton(
+              onPressed: () {
+                DbHelper.transaction((db) async {
+                  await db.delete(DbHelper.dbName,
+                      where: "id = ?", whereArgs: [id]);
+                  setState(() {
+                    historyList.removeAt(index);
+                  });
+                });
+                Get.until((route) => Get.isDialogOpen != true);
+                '删除成功'.toast();
+              },
+              child: const Text('删除'))
+        ],
+      ),
+    );
+  }
+
+  void _edit(int id, String oldTitle, String? oldDescribe) {
+    Get.until((route) => Get.isBottomSheetOpen != true);
+    final title = EditText(
+          label: '标题',
+          defaultStr: oldTitle,
+        ),
+        desc = EditText(
+          label: '详细说明',
+          maxLines: 3,
+          defaultStr: oldDescribe,
+        );
+    Get.generalDialog(
+      pageBuilder: (context, animation1, animation2) => AlertDialog(
+        title: const Text('保存'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            title,
+            desc,
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () {
+                Get.until((route) => Get.isDialogOpen != true);
+              },
+              child: const Text('取消')),
+          TextButton(
+              onPressed: () async {
+                final titleStr = title.text();
+                if (titleStr.isEmpty) {
+                  '标题不能为空'.toast();
+                } else {
+                  final descStr = desc.text();
+                  await DbHelper.update(id, title: titleStr, describe: descStr);
+                  Get.until((route) => Get.isDialogOpen != true);
+                  '保存成功'.toast();
+                  _loadData();
+                }
+              },
+              child: const Text('保存')),
+        ],
+        scrollable: true,
+      ),
+    );
+  }
+
+  void _loadData() async {
+    historyList.clear();
+    DbHelper.transaction((db) async {
+      final list = await db.query(DbHelper.dbName, orderBy: 'id desc');
+      setState(() {
+        if (list.isNotEmpty) {
+          historyList.addAll(list);
+        }
+      });
+    });
   }
 }
