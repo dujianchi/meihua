@@ -26,6 +26,7 @@ class _HistoryList extends StatefulWidget {
 
 class _HistoryListState extends State<_HistoryList> {
   final historyList = [];
+  final _opacities = <int, double>{};
 
   @override
   void initState() {
@@ -58,8 +59,12 @@ CREATE TABLE $dbName (
         final bian = item['bian'] as int;
         final title = item['title'] as String;
         final describe = item['describe'] as String?;
+        final opacity = _opacities[index] ?? 0.0;
         final contentChildren = [
-          Text(title, style: const TextStyle(color: Colors.redAccent)),
+          Opacity(
+            opacity: opacity,
+            child: Text(title, style: const TextStyle(color: Colors.redAccent)),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -75,8 +80,11 @@ CREATE TABLE $dbName (
               style: const TextStyle(color: Colors.blueGrey)),
         ];
         if (describe?.isNotEmpty == true) {
-          contentChildren.add(Text('详细说明: $describe',
-              style: const TextStyle(color: Colors.blueAccent)));
+          contentChildren.add(Opacity(
+            opacity: opacity,
+            child: Text('详细说明: $describe',
+                style: const TextStyle(color: Colors.blueAccent)),
+          ));
         }
         return ListTile(
           title: Column(
@@ -96,6 +104,7 @@ CREATE TABLE $dbName (
             );
           },
           onLongPress: () {
+            final hideText = (_opacities[index] == 100) ? '隐藏' : '显示';
             Get.bottomSheet(BottomSheet(
                 clipBehavior: Clip.antiAlias,
                 onClosing: () {},
@@ -105,6 +114,13 @@ CREATE TABLE $dbName (
                     ListTile(
                       title: const Text('编辑'),
                       onTap: () => _edit(id, title, describe),
+                    ),
+                    ListTile(
+                      title: Text(
+                        hideText,
+                        style: const TextStyle(color: Colors.blueAccent),
+                      ),
+                      onTap: () => _hide(index),
                     ),
                     ListTile(
                       title: const Text(
@@ -203,6 +219,18 @@ CREATE TABLE $dbName (
         scrollable: true,
       ),
     );
+  }
+
+  void _hide(int index) {
+    Get.until((route) => Get.isBottomSheetOpen != true);
+    final opacity = _opacities[index] ?? 0.0;
+    setState(() {
+      if (opacity == 0) {
+        _opacities[index] = 100;
+      } else {
+        _opacities[index] = 0;
+      }
+    });
   }
 
   void _loadData() async {
