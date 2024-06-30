@@ -44,3 +44,4 @@ app.*.map.json
 
 # LibreOffice打开文件时的临时文件
 .~lock.*
+/pubspec.lock

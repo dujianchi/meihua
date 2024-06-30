@@ -11,14 +11,14 @@ class DbHelper {
   factory DbHelper() {
     return _instance;
   }
-  static const dbName = 'pan_history';
+  static const dbName = 'pan_history', dbNameConfig = "config";
 
   static Future<void> database(DatabaseExec exec) async {
     final databasesPath = await getDatabasesPath();
     final path = '$databasesPath/database.db';
     Database database = await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (Database db, int version) async {
         // When creating the db, create the table
         await db.execute('''
@@ -33,8 +33,25 @@ CREATE TABLE $dbName (
 	`describe` TEXT
 );
 ''');
+        await db.execute('''
+CREATE TABLE $dbNameConfig (
+	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
+	`key` TEXT NOT NULL UNIQUE,
+	`val` TEXT
+);
+''');
       },
-      onUpgrade: (db, oldVersion, newVersion) {},
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion == 1 && newVersion == 2) {
+          await db.execute('''
+CREATE TABLE $dbNameConfig (
+	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
+	`key` TEXT NOT NULL UNIQUE,
+	`val` TEXT
+);
+''');
+        }
+      },
     );
     await exec(database);
     await database.close();
