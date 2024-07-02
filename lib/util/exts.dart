@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 import 'package:get/utils.dart';
 import 'package:lunar/lunar.dart';
@@ -74,6 +74,8 @@ extension LunarExt on Lunar {
 
 extension DynamicExt on dynamic {
   void log([prefix]) {
-    debugPrint('${prefix ?? ''}$this');
+    if (kDebugMode) {
+      debugPrint('${prefix ?? ''}${this?.toString()}');
+    }
   }
 }

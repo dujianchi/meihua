@@ -145,7 +145,7 @@ CREATE TABLE $dbNameConfig (
     });
   }
 
-  static Future<void> saveList(List<dynamic>? cloudList) async {
+  static Future<void> saveList(Iterable<dynamic>? cloudList) async {
     if (cloudList?.isNotEmpty == true) {
       await transaction((db) async {
         for (var item in cloudList!) {

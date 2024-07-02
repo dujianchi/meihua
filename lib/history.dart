@@ -199,7 +199,7 @@ CREATE TABLE $dbName (
             // todo 待完善的合并算法，应该试着加一个唯一值，判断唯一值进行合并，同时应该做一个删除操作，可能要价格同步表，记录所有操作记录，按照同步表去同步
             final newList = <dynamic>[];
             newList.addAll(_historyList);
-            final cloudList = cloudJsonArray.where((map) {
+            List<dynamic> cloudList = cloudJsonArray.takeWhile((map) {
               final saveDate = map['save_date'] as int?;
               return !_historyList
                   .any((m) => (m['save_date'] as int?) == saveDate);
