@@ -144,4 +144,30 @@ CREATE TABLE $dbNameConfig (
       return exists.isEmpty ? null : exists.first['val'];
     });
   }
+
+  static Future<void> saveList(List<dynamic>? cloudList) async {
+    if (cloudList?.isNotEmpty == true) {
+      await transaction((db) async {
+        for (var item in cloudList!) {
+          //final id = item['id'] as int;
+          final saveDate = item['save_date'] as int?;
+          final lunarDate = item['lunar_date'] as String?;
+          final shang = item['shang'] as int;
+          final xia = item['xia'] as int;
+          final bian = item['bian'] as int;
+          final title = item['title'] as String;
+          final describe = item['describe'] as String?;
+          db.insert(dbName, {
+            'save_date': saveDate,
+            'lunar_date': lunarDate,
+            'shang': shang,
+            'xia': xia,
+            'bian': bian,
+            'title': title,
+            'describe': describe,
+          });
+        }
+      });
+    }
+  }
 }

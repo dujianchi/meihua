@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
@@ -5,6 +7,7 @@ import 'package:meihua/entity/yi.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
+import 'package:webdav_client/webdav_client.dart';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -14,7 +17,7 @@ class History extends StatefulWidget {
 }
 
 class _HistoryState extends State<History> {
-  final _historyList = [];
+  final _historyList = <Map<String, dynamic>>[];
   final _opacities = <int, bool>{};
   var _hideAll = true;
 
@@ -169,7 +172,56 @@ CREATE TABLE $dbName (
           account?.isEmpty == true ||
           password?.isEmpty == true) {
         _actionSelected(2);
-      } else {}
+      } else {
+        var success = true;
+        final client = newClient(
+          serverUrl!,
+          user: account!,
+          password: password!,
+          debug: false,
+        );
+        client.setHeaders({'accept-charset': 'utf-8'});
+        client.setConnectTimeout(8000);
+        client.setSendTimeout(8000);
+        client.setReceiveTimeout(8000);
+        try {
+          await client.ping();
+          await client.mkdir('/meihua');
+          var list = await client.readDir('/meihua');
+          if (list.isEmpty) {
+            final jsonArray = jsonEncode(_historyList);
+            jsonArray.log('json array = ');
+            await client.write('/meihua/history.json', utf8.encode(jsonArray));
+          } else {
+            final cloudJsonBytes = await client.read('/meihua/history.json');
+            final cloudJsonArray =
+                jsonDecode(utf8.decode(cloudJsonBytes)) as List<dynamic>;
+            // todo 待完善的合并算法，应该试着加一个唯一值，判断唯一值进行合并，同时应该做一个删除操作，可能要价格同步表，记录所有操作记录，按照同步表去同步
+            final newList = <dynamic>[];
+            newList.addAll(_historyList);
+            final cloudList = cloudJsonArray.where((map) {
+              final saveDate = map['save_date'] as int?;
+              return !_historyList
+                  .any((m) => (m['save_date'] as int?) == saveDate);
+            }).toList();
+            cloudList.log('cloudList = ');
+            if (cloudList.isNotEmpty) {
+              await DbHelper.saveList(cloudList);
+              newList.add(cloudList);
+              final jsonArray = jsonEncode(newList);
+              jsonArray.log('json array = ');
+              await client.write(
+                  '/meihua/history.json', utf8.encode(jsonArray));
+            }
+          }
+        } catch (e) {
+          '连接WebDav失败，失败原因：$e'.toast(5);
+          e.log('webdav exception: ');
+          success = false;
+        } finally {
+          (success ? '同步成功' : '同步失败').toast();
+        }
+      }
     } else if (index == 2) {
       final oldServerUrl = await DbHelper.getConfig('webdav_server');
       final oldAccount = await DbHelper.getConfig('webdav_account');
@@ -309,7 +361,7 @@ CREATE TABLE $dbName (
   void _loadData() async {
     _historyList.clear();
     DbHelper.transaction((db) async {
-      final list = await db.query(DbHelper.dbName, orderBy: 'id desc');
+      final list = await db.query(DbHelper.dbName, orderBy: 'save_date desc');
       setState(() {
         if (list.isNotEmpty) {
           _historyList.addAll(list);
