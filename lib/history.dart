@@ -17,7 +17,7 @@ class History extends StatefulWidget {
 }
 
 class _HistoryState extends State<History> {
-  final _historyList = <Map<String, dynamic>>[];
+  final _historyList = <dynamic>[];
   final _opacities = <int, bool>{};
   var _hideAll = true;
 
@@ -197,17 +197,19 @@ CREATE TABLE $dbName (
             final cloudJsonArray =
                 jsonDecode(utf8.decode(cloudJsonBytes)) as List<dynamic>;
             // todo 待完善的合并算法，应该试着加一个唯一值，判断唯一值进行合并，同时应该做一个删除操作，可能要价格同步表，记录所有操作记录，按照同步表去同步
-            final newList = <dynamic>[];
+            final newList = <dynamic>[], cloudList = <dynamic>[];
             newList.addAll(_historyList);
-            List<dynamic> cloudList = cloudJsonArray.takeWhile((map) {
-              final saveDate = map['save_date'] as int?;
-              return !_historyList
-                  .any((m) => (m['save_date'] as int?) == saveDate);
-            }).toList();
+            for (dynamic map in cloudJsonArray) {
+              final saveDate = map['save_date'];
+              if (!_historyList
+                  .any((m) => '${m['save_date']}' == '$saveDate')) {
+                cloudList.add(map);
+              }
+            }
             cloudList.log('cloudList = ');
             if (cloudList.isNotEmpty) {
               await DbHelper.saveList(cloudList);
-              newList.add(cloudList);
+              newList.addAll(cloudList);
               final jsonArray = jsonEncode(newList);
               jsonArray.log('json array = ');
               await client.write(
