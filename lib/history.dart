@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/util/db_helper.dart';
@@ -152,13 +153,69 @@ CREATE TABLE $dbName (
     );
   }
 
-  void _actionSelected(index) {
+  void _actionSelected(index) async {
     if (index == 0) {
       _hideAll = !_hideAll;
       for (var i = 0; i < _historyList.length; i++) {
         _opacities[i] = _hideAll;
       }
       setState(() {});
+    } else if (index == 1) {
+      final serverUrl = await DbHelper.getConfig('webdav_server');
+      final account = await DbHelper.getConfig('webdav_account');
+      final password = await DbHelper.getConfig('webdav_password');
+
+      if (serverUrl?.isEmpty == true ||
+          account?.isEmpty == true ||
+          password?.isEmpty == true) {
+        _actionSelected(2);
+      } else {}
+    } else if (index == 2) {
+      final oldServerUrl = await DbHelper.getConfig('webdav_server');
+      final oldAccount = await DbHelper.getConfig('webdav_account');
+      final oldPassword = await DbHelper.getConfig('webdav_password');
+      final etServer = EditText(
+            label: '服务器地址',
+            defaultStr: oldServerUrl ?? 'https://dav.jianguoyun.com/dav/',
+          ),
+          etAccount = EditText(
+            label: '账号',
+            defaultStr: oldAccount,
+          ),
+          etPassword = EditText(
+            label: '密码',
+            defaultStr: oldPassword,
+          );
+      Get.generalDialog(
+        pageBuilder: (context, animation1, animation2) => AlertDialog(
+          title: const Text('WebDav同步设置'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [etServer, etAccount, etPassword],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Get.until((route) => Get.isDialogOpen != true);
+                },
+                child: const Text('取消')),
+            TextButton(
+                onPressed: () async {
+                  final serverUrl = etServer.text(),
+                      account = etAccount.text(),
+                      password = etPassword.text();
+                  await DbHelper.saveConfig({
+                    'webdav_server': serverUrl,
+                    'webdav_account': account,
+                    'webdav_password': password,
+                  });
+                  Get.until((route) => Get.isDialogOpen != true);
+                },
+                child: const Text('保存')),
+          ],
+          scrollable: true,
+        ),
+      );
     }
   }
 

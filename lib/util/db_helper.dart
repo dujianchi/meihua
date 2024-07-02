@@ -2,8 +2,8 @@ import 'package:lunar/lunar.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:sqflite/sqflite.dart';
 
-typedef DatabaseExec = Future<void> Function(Database db);
-typedef StatementExec = Future<void> Function(Transaction txn);
+typedef DatabaseExec = Future<dynamic> Function(Database db);
+typedef StatementExec = Future<dynamic> Function(Transaction txn);
 
 class DbHelper {
   static final DbHelper _instance = DbHelper._internal();
@@ -13,7 +13,7 @@ class DbHelper {
   }
   static const dbName = 'pan_history', dbNameConfig = "config";
 
-  static Future<void> database(DatabaseExec exec) async {
+  static Future<dynamic> database(DatabaseExec exec) async {
     final databasesPath = await getDatabasesPath();
     final path = '$databasesPath/database.db';
     Database database = await openDatabase(
@@ -53,15 +53,16 @@ CREATE TABLE $dbNameConfig (
         }
       },
     );
-    await exec(database);
+    final execResult = await exec(database);
     await database.close();
+    return execResult;
   }
 
-  static Future<void> transaction(StatementExec exec) async {
-    await database((db) async {
-      await db.transaction(
+  static Future<dynamic> transaction(StatementExec exec) async {
+    return await database((db) async {
+      return await db.transaction(
         (txn) async {
-          await exec(txn);
+          return await exec(txn);
         },
       );
     });
@@ -107,6 +108,40 @@ CREATE TABLE $dbNameConfig (
     await transaction((db) async {
       await db
           .update(DbHelper.dbName, values, where: "id = ?", whereArgs: [id]);
+    });
+  }
+
+  static Future<void> saveConfig(Map<String, String> configs) async {
+    await transaction((db) async {
+      configs.forEach(
+        (key, val) async {
+          final exists = await db.query(dbNameConfig,
+              where: 'key = ?', whereArgs: [key], limit: 1);
+          if (exists.isEmpty) {
+            await db.insert(dbNameConfig, {
+              'key': key,
+              'val': val,
+            });
+          } else {
+            await db.update(dbNameConfig, {'key': key, 'val': val},
+                where: 'id = ?', whereArgs: [exists.first['id']]);
+          }
+        },
+      );
+    });
+  }
+
+  static Future<void> deleteConfig(String key) async {
+    await transaction((db) async {
+      await db.delete(dbNameConfig, where: 'key = ?', whereArgs: [key]);
+    });
+  }
+
+  static Future<String?> getConfig(String key) async {
+    return await transaction((db) async {
+      final exists = await db.query(dbNameConfig,
+          where: 'key = ?', whereArgs: [key], limit: 1);
+      return exists.isEmpty ? null : exists.first['val'];
     });
   }
 }
