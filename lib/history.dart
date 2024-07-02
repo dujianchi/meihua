@@ -5,28 +5,17 @@ import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
 
-class History extends StatelessWidget {
+class History extends StatefulWidget {
   const History({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('排盘历史'),
-      ),
-      body: _HistoryList(),
-    );
-  }
+  State<StatefulWidget> createState() => _HistoryState();
 }
 
-class _HistoryList extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() => _HistoryListState();
-}
-
-class _HistoryListState extends State<_HistoryList> {
-  final historyList = [];
-  final _opacities = <int, double>{};
+class _HistoryState extends State<History> {
+  final _historyList = [];
+  final _opacities = <int, bool>{};
+  var _hideAll = true;
 
   @override
   void initState() {
@@ -36,9 +25,9 @@ class _HistoryListState extends State<_HistoryList> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    final listview = ListView.separated(
       itemBuilder: (context, index) {
-        final item = historyList[index];
+        final item = _historyList[index];
 /*
 CREATE TABLE $dbName (
 	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,7 +48,7 @@ CREATE TABLE $dbName (
         final bian = item['bian'] as int;
         final title = item['title'] as String;
         final describe = item['describe'] as String?;
-        final opacity = _opacities[index] ?? 0.0;
+        final opacity = (_opacities[index] ?? true) ? 0.0 : 1.0;
         final contentChildren = [
           Opacity(
             opacity: opacity,
@@ -104,7 +93,7 @@ CREATE TABLE $dbName (
             );
           },
           onLongPress: () {
-            final hideText = (_opacities[index] == 100) ? '隐藏' : '显示';
+            final hideText = (_opacities[index] ?? true) ? '显示' : '隐藏';
             Get.bottomSheet(BottomSheet(
                 clipBehavior: Clip.antiAlias,
                 onClosing: () {},
@@ -137,13 +126,40 @@ CREATE TABLE $dbName (
           },
         );
       },
-      itemCount: historyList.length,
+      itemCount: _historyList.length,
       separatorBuilder: (BuildContext context, int index) => const Divider(
         color: Colors.grey,
         thickness: 0,
         height: 0.1,
       ),
     );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('排盘历史'),
+        actions: [
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              PopupMenuItem(value: 0, child: Text(_hideAll ? '显示全部' : '隐藏全部')),
+              const PopupMenuItem(value: 1, child: Text('同步')),
+              const PopupMenuItem(value: 2, child: Text('同步设置')),
+            ],
+            onSelected: (value) => _actionSelected(value),
+          )
+        ],
+      ),
+      body: listview,
+    );
+  }
+
+  void _actionSelected(index) {
+    if (index == 0) {
+      _hideAll = !_hideAll;
+      for (var i = 0; i < _historyList.length; i++) {
+        _opacities[i] = _hideAll;
+      }
+      setState(() {});
+    }
   }
 
   void _delete(int id, String title, int index) {
@@ -162,7 +178,7 @@ CREATE TABLE $dbName (
                   await db.delete(DbHelper.dbName,
                       where: "id = ?", whereArgs: [id]);
                   setState(() {
-                    historyList.removeAt(index);
+                    _historyList.removeAt(index);
                   });
                 });
                 Get.until((route) => Get.isDialogOpen != true);
@@ -223,23 +239,23 @@ CREATE TABLE $dbName (
 
   void _hide(int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
-    final opacity = _opacities[index] ?? 0.0;
+    final hide = _opacities[index] ?? true;
     setState(() {
-      if (opacity == 0) {
-        _opacities[index] = 100;
+      if (hide) {
+        _opacities[index] = false;
       } else {
-        _opacities[index] = 0;
+        _opacities[index] = true;
       }
     });
   }
 
   void _loadData() async {
-    historyList.clear();
+    _historyList.clear();
     DbHelper.transaction((db) async {
       final list = await db.query(DbHelper.dbName, orderBy: 'id desc');
       setState(() {
         if (list.isNotEmpty) {
-          historyList.addAll(list);
+          _historyList.addAll(list);
         }
       });
     });
