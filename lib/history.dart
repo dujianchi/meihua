@@ -198,7 +198,6 @@ CREATE TABLE $dbName (
                 jsonDecode(utf8.decode(cloudJsonBytes)) as List<dynamic>;
             // todo 待完善的合并算法，应该试着加一个唯一值，判断唯一值进行合并，同时应该做一个删除操作，可能要价格同步表，记录所有操作记录，按照同步表去同步
             final newList = <dynamic>[], cloudList = <dynamic>[];
-            newList.addAll(_historyList);
             for (dynamic map in cloudJsonArray) {
               final saveDate = map['save_date'];
               if (!_historyList
@@ -206,16 +205,24 @@ CREATE TABLE $dbName (
                 cloudList.add(map);
               }
             }
+            for (dynamic map in _historyList) {
+              final saveDate = map['save_date'];
+              if (!cloudJsonArray
+                  .any((m) => '${m['save_date']}' == '$saveDate')) {
+                newList.add(map);
+              }
+            }
             cloudList.log('cloudList = ');
-            if (cloudList.isNotEmpty) {
+            if (cloudList.isNotEmpty || newList.isNotEmpty) {
               await DbHelper.saveList(cloudList);
-              newList.addAll(cloudList);
-              final jsonArray = jsonEncode(newList);
+              _historyList.addAll(cloudList);
+              final jsonArray = jsonEncode(_historyList);
               jsonArray.log('json array = ');
               await client.write(
                   '/meihua/history.json', utf8.encode(jsonArray));
             }
           }
+          _loadData();
         } catch (e) {
           '连接WebDav失败，失败原因：$e'.toast(5);
           e.log('webdav exception: ');
