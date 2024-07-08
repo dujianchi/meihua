@@ -12,6 +12,8 @@ _exec文件夹下有Android的apk和Win10 x64的exe可执行程序
 ## 资料来源
 - 易经拼音及注释：https://guoxue.httpcn.com/html/book/TBMEUYUY/TBPWIL.shtml
 - 易经原文文字：https://gx.httpcn.com/book/read/UYKOTBCQ/CQCQCQPWPWME.shtml
+- https://www.zhonghuadiancang.com/xuanxuewushu/meihuayishu/
+- https://www.gushicimingju.com/dianji/zhouyi/
 
 ## Getting Started
 
