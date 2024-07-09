@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:sqflite/sqflite.dart';
@@ -11,47 +14,22 @@ class DbHelper {
   factory DbHelper() {
     return _instance;
   }
-  static const dbName = 'pan_history', dbNameConfig = "config";
+  static const dbName = 'history', dbNameConfig = "config";
 
   static Future<dynamic> database(DatabaseExec exec) async {
     final databasesPath = await getDatabasesPath();
-    final path = '$databasesPath/database.db';
+    final path = '$databasesPath/meihua.db';
+    final dbFile = File(path);
+    if (!dbFile.existsSync()) {
+      final databaseBytes = await rootBundle.load('assets/meihua.db');
+      await dbFile.writeAsBytes(databaseBytes.buffer.asInt8List());
+    }
+    path.log('database path = ');
     Database database = await openDatabase(
       path,
-      version: 2,
-      onCreate: (Database db, int version) async {
-        // When creating the db, create the table
-        await db.execute('''
-CREATE TABLE $dbName (
-	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
-	`save_date` INTEGER,
-	`lunar_date` TEXT,
-	`shang` INTEGER NOT NULL,
-	`xia` INTEGER NOT NULL,
-	`bian` INTEGER NOT NULL,
-	`title` TEXT NOT NULL,
-	`describe` TEXT
-);
-''');
-        await db.execute('''
-CREATE TABLE $dbNameConfig (
-	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
-	`key` TEXT NOT NULL UNIQUE,
-	`val` TEXT
-);
-''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion == 1 && newVersion == 2) {
-          await db.execute('''
-CREATE TABLE $dbNameConfig (
-	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
-	`key` TEXT NOT NULL UNIQUE,
-	`val` TEXT
-);
-''');
-        }
-      },
+      version: 1,
+      onCreate: (Database db, int version) async {},
+      onUpgrade: (db, oldVersion, newVersion) async {},
     );
     final execResult = await exec(database);
     await database.close();
