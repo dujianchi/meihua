@@ -8,6 +8,7 @@ _exec文件夹下有Android的apk和Win10 x64的exe可执行程序
 ## 待完善
 - 文本内容有待完善，目前是网上爬的内容
 - 目前横屏和pad适配还不是特别完善，未来有可能会考虑适配以下横屏
+- 成卦之数、卦气旺衰
 
 ## 资料来源
 - 易经拼音及注释：https://guoxue.httpcn.com/html/book/TBMEUYUY/TBPWIL.shtml
