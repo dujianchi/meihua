@@ -4,21 +4,23 @@ CREATE TABLE "64gua" (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	name TEXT NOT NULL UNIQUE,
 	full_name TEXT NOT NULL UNIQUE,
+	shang TEXT NOT NULL,
+	xia TEXT NOT NULL,
 	gua_ci TEXT,
-	tuan_ci TEXT,
-	chu_yao TEXT NOT NULL,
-	er_yao TEXT NOT NULL,
-	san_yao TEXT NOT NULL,
-	si_yao TEXT NOT NULL,
-	wu_yao TEXT NOT NULL,
-	shang_yao TEXT NOT NULL,
 	gua_ci_js TEXT,
+	tuan_ci TEXT,
 	tuan_ci_js TEXT, 
+	chu_yao TEXT NOT NULL,
 	chu_yao_js TEXT NOT NULL, 
+	er_yao TEXT NOT NULL,
 	er_yao_js TEXT NOT NULL, 
+	san_yao TEXT NOT NULL,
 	san_yao_js TEXT NOT NULL, 
+	si_yao TEXT NOT NULL,
 	si_yao_js TEXT NOT NULL, 
+	wu_yao TEXT NOT NULL,
 	wu_yao_js TEXT NOT NULL, 
+	shang_yao TEXT NOT NULL,
 	shang_yao_js TEXT NOT NULL
 );
 
@@ -289,3 +291,15 @@ REPLACE INTO "8gua" (id, name, shu_lei, lei_xiang, gua_qi_wang, gua_qi_shuai, xi
 方道：西南。
 五味：甘。
 五色：黄、黑。', '农历三、九、十二、六月', '春', '北', '西南', 8, 2);
+
+
+REPLACE INTO "64gua" (id, name, full_name, shang, xia, gua_ci, gua_ci_js, tuan_ci, tuan_ci_js, chu_yao, chu_yao_js, er_yao, er_yao_js, san_yao, san_yao_js, si_yao, si_yao_js, wu_yao, wu_yao_js, shang_yao, shang_yao_js) VALUES(1, '乾', '乾为天', '乾', '乾', '乾：元，亨，利，贞。', '乾卦：大吉大利，吉祥的占卜。', '彖曰：大哉乾元，万物资始，乃统天。云行雨施，品物流形。大明始终，六位时成，时乘六龙以御天。乾道变化，各正性命，保合大和，乃利贞。首出庶物，万国咸宁。', '伟大呵，乾元！万物因此才有开始，乾元由此主导整个自然界。云气流行，雨水布施，众物周流而各自成形；太阳的光明终而复始地出现，六个爻的位置按时序形成，然后按时乘着这六条龙驾御天道。乾道的变化，（使万物）各自正定其本性与命运，万物留存聚合并处于最和谐状态，达到了适宜和贞固。乾卦为首，创生出万物，普世皆得安宁。', '初九：潜龙，勿用。', '初九:龙星秋分时潜隐不见，不吉利。', '九二：见龙再田，利见大人。', '九二:龙星出现在天田星旁，对王公贵族有利。', '九三：君子终日乾乾，夕惕若，厉无咎。', '九三：有才德的君子整天勤勉努力，夜里也要提防危险，但最终不会有灾难。', '九四：或跃在渊，无咎。', '九四：有些大人君子跳进深潭自杀，并不是他们本身的过失。', '九五：飞龙在天，利见大人。', '九五：龙星春分时出现在天上，对王公贵族有利。', '上九：亢龙有悔。
+用九：见群龙无首，吉。', '上九：龙星上升到极高的地方，是不吉利的征兆。
+用九：卷曲的龙见不到头，是吉利的兆头。');
+REPLACE INTO "64gua" (id, name, full_name, shang, xia, gua_ci, gua_ci_js, tuan_ci, tuan_ci_js, chu_yao, chu_yao_js, er_yao, er_yao_js, san_yao, san_yao_js, si_yao, si_yao_js, wu_yao, wu_yao_js, shang_yao, shang_yao_js) VALUES(2, '坤', '坤为地', '坤', '坤', '《坤》：元亨。利牝马之贞。君子有攸往，先迷，后得主，利。西南得朋，东北丧朋。安贞吉。', '坤卦：大吉大利。占问母马得到了吉利的征兆。君子贵族外出旅行经商，开始时迷了路，后来遇上招待客人的房东。往西南方向走有利，可以获得财物；往东北方向走会丧失财物。占问定居，得到吉利的预兆。', '彖曰：至哉坤元，万物资生，乃顺承天。 坤厚载物，德合无疆。 含弘光大，品物咸亨。 牝马地类，行地无疆，柔顺利贞。 君子攸行，先迷失道，后顺得常。 西南得朋，乃与类行；东北丧朋，乃终有庆。', '崇高呵，大地的开创之功。万物依赖它获得生命的基础。它顺承着天道的变化。大地厚实，承载万物，大地美德，广大无垠。它蕴藏深厚，地面辽阔，各种物类皆得其所。牝马阴性，与地同类，善于在无边无际的大地上奔跑，生性柔和、温顺、便捷、执着。君子外出，先迷失路途，后来顺利地找到归宿。西南行得到朋友，于是与志同道合的友人同行。东北行丧失朋友，不过最后还是吉庆的。祥和贞吉，则无往而不吉利，正如大地随处伸展不穷一样。', '初六：履霜，坚冰至。', '初六：脚下踩到了薄霜，结成坚实冰层的时令就快要到了。', '六二，直、方、大，不习，无不利。', '六二：大地的形貌平直、方正、辽阔；虽然去到不熟悉的陌生地方，也不会有什么问题。', '六三，含章，可贞，或从王事，无成有终。', '六三：周武王战胜殷商，是很好的占卜。有人参与战争，虽然没有战绩，但结局却很好。', '六四：括囊﹔無咎，無譽。', '六四：把收成装进口袋捆好，收成不好不坏。', '六五，黄裳，元吉。', '六五：黄色裙裤是大吉大利的象征。', '上六，龙战于野，其血玄黄。
+用六，利永贞。', '上六：龙在旷野上争斗，血流遍地。
+用六：这是永久吉利的最好征兆。');
+REPLACE INTO "64gua" (id, name, full_name, shang, xia, gua_ci, gua_ci_js, tuan_ci, tuan_ci_js, chu_yao, chu_yao_js, er_yao, er_yao_js, san_yao, san_yao_js, si_yao, si_yao_js, wu_yao, wu_yao_js, shang_yao, shang_yao_js) VALUES(3, '屯', '水雷屯', '坎', '震', '屯：元，亨，利，贞，勿用，有攸往，利建侯。', '屯卦：大吉大利，吉祥的占卜。出门不利。有利于建国封侯。', '彖曰：屯，刚柔始交而难生，动乎险中，大亨贞。雷雨之动满盈，天造草昧，宜建侯而不宁。', '屯，刚柔始相交而难以生成，动于险难之中。盛大“亨通而守正”，雷雨震动充满（天地之间），天始造化，万物萌发，（此时）适宜于封建诸侯，但将不安宁。', '初九，磐桓，利居贞。利建侯。', '初九：徘徊难行。占问安居而得到吉利的征兆。有利于建国封侯。', '六二，屯如邅如，乘马班如。匪寇，婚媾。女子贞不字，十年乃字。', '六二：想前进又难于前进，乘着马车在原地回旋。这不是强盗前来抢劫，而是来求婚。占卜的结果是这个女子不能怀孕，十年之后才能生育。', '六三，即鹿无虞，惟入于林中，君子几不如舍，往吝。', '六三；追捕康鹿时没有熟悉山林的人当向导，正在想进入密林中去。君子很机智，认为不如放弃追捕。进入密林很艰难。', '六四，乘马班如，求婚媾。往吉，无不利。', '六四：乘着马车在原地回旋，因为是去求婚。前进的结果吉利，没有什么不利。', '九五，屯其膏，小，贞吉；大，贞凶。', '九五：把肥肉囤积起来。占问小事吉利，占问大事凶险。', '上六，乘马班如，泣血涟如。', '上六：乘着马车在原地回旋，悲痛得血泪流淌不断。');
+
+
+
