@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/enum/ba_gua.dart';
-import 'package:meihua/widget/doc_tooltip.dart';
 import 'package:meihua/widget/yao.dart';
 
 /// 先天八卦
@@ -147,16 +146,14 @@ class Gua extends StatelessWidget {
             ),
           ),
           Center(
-            child: DocTooltip(
-                fullname: '${baGua?.name}',
-                widget: Text(
-                  baGua?.name ?? '',
-                  style: TextStyle(
-                    fontSize: 24,
-                    background: Paint()..color = Colors.white24,
-                    foreground: Paint()..color = Colors.blueAccent,
-                  ),
-                )),
+            child: Text(
+              baGua?.name ?? '',
+              style: TextStyle(
+                fontSize: 24,
+                background: Paint()..color = Colors.white24,
+                foreground: Paint()..color = Colors.blueAccent,
+              ),
+            ),
           )
         ],
       );

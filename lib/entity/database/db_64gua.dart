@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/entity/database/base.dart';
+import 'package:meihua/util/db_helper.dart';
 
 class Db64gua extends Base {
   static const nameDb = '`64gua`';
@@ -99,5 +100,16 @@ class Db64gua extends Base {
       }
     }
     return TextSpan(children: children);
+  }
+
+  static Future<Db64gua?> fromFullname(String? fullName) async {
+    if (fullName?.isNotEmpty == true) {
+      final db64guas = await DbHelper.query(Db64gua.nameDb,
+          where: 'full_name = ?', whereArgs: [fullName], limit: 1);
+      if (db64guas.isNotEmpty) {
+        return Db64gua()..fromMap(db64guas[0]);
+      }
+    }
+    return null;
   }
 }

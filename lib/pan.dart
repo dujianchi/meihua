@@ -47,12 +47,10 @@ class _PanState extends State<_Pan> {
 
   void _changeChongGua(ChongGua chongGua) async {
     _chongGua = chongGua;
-    final db64guas = await DbHelper.query(Db64gua.nameDb,
-        where: 'full_name = ?', whereArgs: [chongGua.gua()!.name()], limit: 1);
-    if (db64guas.isNotEmpty) {
-      final db64gua = Db64gua()..fromMap(db64guas[0]);
+    final db64gua = await Db64gua.fromFullname(chongGua.gua()!.name());
+    if (db64gua != null) {
       setState(() {
-        _bottomString = db64gua.toText(chongGua.bian);
+        _bottomString = db64gua.toText(chongGua.hu ? null : chongGua.bian);
       });
     }
   }
@@ -76,6 +74,7 @@ class _PanState extends State<_Pan> {
             widget.yi!.xia,
             spacing: Pan.spacing,
             hu: true,
+            bian: widget.yi?.dong,
           ),
           bianGua = ChongGua(
             widget.yi!.shang,
@@ -116,6 +115,13 @@ class _PanState extends State<_Pan> {
               hu,
               bian,
             ],
+          ),
+        ),
+        Visibility(
+          visible: _chongGua?.huBian == true,
+          child: const SelectableText(
+            '乾坤无互，互其变卦',
+            style: TextStyle(color: Colors.red),
           ),
         ),
         Padding(
