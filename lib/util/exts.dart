@@ -1,8 +1,12 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart' as c;
 import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 import 'package:get/utils.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/enum/ba_gua.dart';
+import 'package:sqflite/utils/utils.dart';
 
 extension IntExt on int {
   // 卦数取余
@@ -63,6 +67,12 @@ extension StringExtNullable on String? {
         duration: Duration(seconds: duration),
       ));
     }
+  }
+
+  String? md5() {
+    if (this == null) return null;
+    final bytes = c.md5.convert(utf8.encode(this!)).bytes;
+    return hex(bytes);
   }
 }
 

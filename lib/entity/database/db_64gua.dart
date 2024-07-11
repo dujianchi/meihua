@@ -1,4 +1,4 @@
-import 'package:meihua/enum/database/base.dart';
+import 'package:meihua/entity/database/base.dart';
 
 class Db64gua extends Base {
   static const nameDb = '`64gua`';
