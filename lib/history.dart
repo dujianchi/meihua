@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/yi.dart';
+import 'package:meihua/enum/database/db_history.dart';
+import 'package:meihua/enum/database/db_history_sync.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
@@ -17,7 +19,7 @@ class History extends StatefulWidget {
 }
 
 class _HistoryState extends State<History> {
-  final _historyList = <dynamic>[];
+  final _historyList = <DbHistory>[];
   final _opacities = <int, bool>{};
   var _hideAll = true;
 
@@ -32,50 +34,31 @@ class _HistoryState extends State<History> {
     final listview = ListView.separated(
       itemBuilder: (context, index) {
         final item = _historyList[index];
-/*
-CREATE TABLE $dbName (
-	`id` INTEGER PRIMARY KEY AUTOINCREMENT,
-	`save_date` INTEGER,
-	`lunar_date` TEXT,
-	`shang` INTEGER NOT NULL,
-	`xia` INTEGER NOT NULL,
-	`bian` INTEGER NOT NULL,
-	`title` TEXT NOT NULL,
-	`describe` TEXT
-);
-*/
-        final id = item['id'] as int;
-        final saveDate = item['save_date'] as int?;
-        final lunarDate = item['lunar_date'] as String?;
-        final shang = item['shang'] as int;
-        final xia = item['xia'] as int;
-        final bian = item['bian'] as int;
-        final title = item['title'] as String;
-        final describe = item['describe'] as String?;
         final opacity = (_opacities[index] ?? true) ? 0.0 : 1.0;
         final contentChildren = [
           Opacity(
             opacity: opacity,
-            child: Text(title, style: const TextStyle(color: Colors.redAccent)),
+            child: Text(item.title!,
+                style: const TextStyle(color: Colors.redAccent)),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               // Text('id: $id'),
-              Text('上卦: ${shang.baGua().name}'),
-              Text('下卦: ${xia.baGua().name}'),
-              Text('变爻: ${bian.yao()}'),
+              Text('上卦: ${item.shang!.baGua().name}'),
+              Text('下卦: ${item.xia!.baGua().name}'),
+              Text('变爻: ${item.bian!.yao()}'),
             ],
           ),
-          Text('时间: ${saveDate.dateStr()}',
+          Text('时间: ${item.saveDate.dateStr()}',
               style: const TextStyle(color: Colors.blueGrey)),
-          Text('农历时间: ${lunarDate.or()}',
+          Text('农历时间: ${item.lunarDate.or()}',
               style: const TextStyle(color: Colors.blueGrey)),
         ];
-        if (describe?.isNotEmpty == true) {
+        if (item.describe?.isNotEmpty == true) {
           contentChildren.add(Opacity(
             opacity: opacity,
-            child: Text('详细说明: $describe',
+            child: Text('详细说明: ${item.describe}',
                 style: const TextStyle(color: Colors.blueAccent)),
           ));
         }
@@ -89,10 +72,10 @@ CREATE TABLE $dbName (
             Get.toNamed(
               'pan',
               arguments: Yi(
-                shang: shang == 0 ? 8 : shang,
-                xia: xia == 0 ? 8 : xia,
-                dong: bian == 0 ? 6 : bian,
-                historyDate: '${saveDate.dateStr()}\n($lunarDate)',
+                shang: item.shang! == 0 ? 8 : item.shang!,
+                xia: item.xia! == 0 ? 8 : item.xia!,
+                dong: item.bian! == 0 ? 6 : item.bian!,
+                historyDate: '${item.saveDate.dateStr()}\n(${item.lunarDate})',
               ),
             );
           },
@@ -106,7 +89,7 @@ CREATE TABLE $dbName (
                   final children = <Widget>[
                     ListTile(
                       title: const Text('编辑'),
-                      onTap: () => _edit(id, title, describe),
+                      onTap: () => _edit(item),
                     ),
                     ListTile(
                       title: Text(
@@ -120,7 +103,7 @@ CREATE TABLE $dbName (
                         '删除',
                         style: TextStyle(color: Colors.redAccent),
                       ),
-                      onTap: () => _delete(id, title, index),
+                      onTap: () => _delete(item, index),
                     ),
                   ];
                   return Wrap(
@@ -164,128 +147,128 @@ CREATE TABLE $dbName (
       }
       setState(() {});
     } else if (index == 1) {
-      final serverUrl = await DbHelper.getConfig('webdav_server');
-      final account = await DbHelper.getConfig('webdav_account');
-      final password = await DbHelper.getConfig('webdav_password');
+      // final serverUrl = await DbHelper.getConfig('webdav_server');
+      // final account = await DbHelper.getConfig('webdav_account');
+      // final password = await DbHelper.getConfig('webdav_password');
 
-      if (serverUrl?.isEmpty == true ||
-          account?.isEmpty == true ||
-          password?.isEmpty == true) {
-        _actionSelected(2);
-      } else {
-        var success = true;
-        final client = newClient(
-          serverUrl!,
-          user: account!,
-          password: password!,
-          debug: false,
-        );
-        client.setHeaders({'accept-charset': 'utf-8'});
-        client.setConnectTimeout(8000);
-        client.setSendTimeout(8000);
-        client.setReceiveTimeout(8000);
-        try {
-          await client.ping();
-          await client.mkdir('/meihua');
-          var list = await client.readDir('/meihua');
-          if (list.isEmpty) {
-            final jsonArray = jsonEncode(_historyList);
-            jsonArray.log('json array = ');
-            await client.write('/meihua/history.json', utf8.encode(jsonArray));
-          } else {
-            final cloudJsonBytes = await client.read('/meihua/history.json');
-            final cloudJsonArray =
-                jsonDecode(utf8.decode(cloudJsonBytes)) as List<dynamic>;
-            // todo 待完善的合并算法，应该试着加一个唯一值，判断唯一值进行合并，同时应该做一个删除操作，可能要价格同步表，记录所有操作记录，按照同步表去同步
-            final newList = <dynamic>[], cloudList = <dynamic>[];
-            for (dynamic map in cloudJsonArray) {
-              final saveDate = map['save_date'];
-              if (!_historyList
-                  .any((m) => '${m['save_date']}' == '$saveDate')) {
-                cloudList.add(map);
-              }
-            }
-            for (dynamic map in _historyList) {
-              final saveDate = map['save_date'];
-              if (!cloudJsonArray
-                  .any((m) => '${m['save_date']}' == '$saveDate')) {
-                newList.add(map);
-              }
-            }
-            cloudList.log('cloudList = ');
-            if (cloudList.isNotEmpty || newList.isNotEmpty) {
-              await DbHelper.saveList(cloudList);
-              _historyList.addAll(cloudList);
-              final jsonArray = jsonEncode(_historyList);
-              jsonArray.log('json array = ');
-              await client.write(
-                  '/meihua/history.json', utf8.encode(jsonArray));
-            }
-          }
-          _loadData();
-        } catch (e) {
-          '连接WebDav失败，失败原因：$e'.toast(5);
-          e.log('webdav exception: ');
-          success = false;
-        } finally {
-          (success ? '同步成功' : '同步失败').toast();
-        }
-      }
+      // if (serverUrl?.isEmpty == true ||
+      //     account?.isEmpty == true ||
+      //     password?.isEmpty == true) {
+      //   _actionSelected(2);
+      // } else {
+      //   var success = true;
+      //   final client = newClient(
+      //     serverUrl!,
+      //     user: account!,
+      //     password: password!,
+      //     debug: false,
+      //   );
+      //   client.setHeaders({'accept-charset': 'utf-8'});
+      //   client.setConnectTimeout(8000);
+      //   client.setSendTimeout(8000);
+      //   client.setReceiveTimeout(8000);
+      //   try {
+      //     await client.ping();
+      //     await client.mkdir('/meihua');
+      //     var list = await client.readDir('/meihua');
+      //     if (list.isEmpty) {
+      //       final jsonArray = jsonEncode(_historyList);
+      //       jsonArray.log('json array = ');
+      //       await client.write('/meihua/history.json', utf8.encode(jsonArray));
+      //     } else {
+      //       // final cloudJsonBytes = await client.read('/meihua/history.json');
+      //       // final cloudJsonArray =
+      //       //     jsonDecode(utf8.decode(cloudJsonBytes)) as List<dynamic>;
+      //       // // todo 待完善的合并算法，应该试着加一个唯一值，判断唯一值进行合并，同时应该做一个删除操作，可能要价格同步表，记录所有操作记录，按照同步表去同步
+      //       // final newList = <dynamic>[], cloudList = <dynamic>[];
+      //       // for (dynamic map in cloudJsonArray) {
+      //       //   final saveDate = map['save_date'];
+      //       //   if (!_historyList
+      //       //       .any((m) => '${m['save_date']}' == '$saveDate')) {
+      //       //     cloudList.add(map);
+      //       //   }
+      //       // }
+      //       // for (dynamic map in _historyList) {
+      //       //   final saveDate = map['save_date'];
+      //       //   if (!cloudJsonArray
+      //       //       .any((m) => '${m['save_date']}' == '$saveDate')) {
+      //       //     newList.add(map);
+      //       //   }
+      //       // }
+      //       // cloudList.log('cloudList = ');
+      //       // if (cloudList.isNotEmpty || newList.isNotEmpty) {
+      //       //   await DbHelper.saveList(cloudList);
+      //       //   _historyList.addAll(cloudList);
+      //       //   final jsonArray = jsonEncode(_historyList);
+      //       //   jsonArray.log('json array = ');
+      //       //   await client.write(
+      //       //       '/meihua/history.json', utf8.encode(jsonArray));
+      //       // }
+      //     }
+      //     _loadData();
+      //   } catch (e) {
+      //     '连接WebDav失败，失败原因：$e'.toast(5);
+      //     e.log('webdav exception: ');
+      //     success = false;
+      //   } finally {
+      //     (success ? '同步成功' : '同步失败').toast();
+      //   }
+      // }
     } else if (index == 2) {
-      final oldServerUrl = await DbHelper.getConfig('webdav_server');
-      final oldAccount = await DbHelper.getConfig('webdav_account');
-      final oldPassword = await DbHelper.getConfig('webdav_password');
-      final etServer = EditText(
-            label: '服务器地址',
-            defaultStr: oldServerUrl ?? 'https://dav.jianguoyun.com/dav/',
-          ),
-          etAccount = EditText(
-            label: '账号',
-            defaultStr: oldAccount,
-          ),
-          etPassword = EditText(
-            label: '密码',
-            defaultStr: oldPassword,
-          );
-      Get.generalDialog(
-        pageBuilder: (context, animation1, animation2) => AlertDialog(
-          title: const Text('WebDav同步设置'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [etServer, etAccount, etPassword],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () {
-                  Get.until((route) => Get.isDialogOpen != true);
-                },
-                child: const Text('取消')),
-            TextButton(
-                onPressed: () async {
-                  final serverUrl = etServer.text(),
-                      account = etAccount.text(),
-                      password = etPassword.text();
-                  await DbHelper.saveConfig({
-                    'webdav_server': serverUrl,
-                    'webdav_account': account,
-                    'webdav_password': password,
-                  });
-                  Get.until((route) => Get.isDialogOpen != true);
-                },
-                child: const Text('保存')),
-          ],
-          scrollable: true,
-        ),
-      );
+      // final oldServerUrl = await DbHelper.getConfig('webdav_server');
+      // final oldAccount = await DbHelper.getConfig('webdav_account');
+      // final oldPassword = await DbHelper.getConfig('webdav_password');
+      // final etServer = EditText(
+      //       label: '服务器地址',
+      //       defaultStr: oldServerUrl ?? 'https://dav.jianguoyun.com/dav/',
+      //     ),
+      //     etAccount = EditText(
+      //       label: '账号',
+      //       defaultStr: oldAccount,
+      //     ),
+      //     etPassword = EditText(
+      //       label: '密码',
+      //       defaultStr: oldPassword,
+      //     );
+      // Get.generalDialog(
+      //   pageBuilder: (context, animation1, animation2) => AlertDialog(
+      //     title: const Text('WebDav同步设置'),
+      //     content: Column(
+      //       mainAxisSize: MainAxisSize.min,
+      //       children: [etServer, etAccount, etPassword],
+      //     ),
+      //     actions: [
+      //       TextButton(
+      //           onPressed: () {
+      //             Get.until((route) => Get.isDialogOpen != true);
+      //           },
+      //           child: const Text('取消')),
+      //       TextButton(
+      //           onPressed: () async {
+      //             final serverUrl = etServer.text(),
+      //                 account = etAccount.text(),
+      //                 password = etPassword.text();
+      //             await DbHelper.saveConfig({
+      //               'webdav_server': serverUrl,
+      //               'webdav_account': account,
+      //               'webdav_password': password,
+      //             });
+      //             Get.until((route) => Get.isDialogOpen != true);
+      //           },
+      //           child: const Text('保存')),
+      //     ],
+      //     scrollable: true,
+      //   ),
+      // );
     }
   }
 
-  void _delete(int id, String title, int index) {
+  void _delete(DbHistory item, int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
     Get.generalDialog(
       pageBuilder: (context, animation1, animation2) => AlertDialog(
         title: const Text('删除'),
-        content: Text('确定删除$title吗'),
+        content: Text('确定删除${item.title}吗'),
         actions: [
           TextButton(
               onPressed: () => Get.until((route) => Get.isDialogOpen != true),
@@ -293,8 +276,8 @@ CREATE TABLE $dbName (
           TextButton(
               onPressed: () {
                 DbHelper.transaction((db) async {
-                  await db.delete(DbHelper.dbName,
-                      where: "id = ?", whereArgs: [id]);
+                  await db.delete(item.dbName,
+                      where: "id = ?", whereArgs: [item.id]);
                   setState(() {
                     _historyList.removeAt(index);
                   });
@@ -308,16 +291,16 @@ CREATE TABLE $dbName (
     );
   }
 
-  void _edit(int id, String oldTitle, String? oldDescribe) {
+  void _edit(DbHistory item) {
     Get.until((route) => Get.isBottomSheetOpen != true);
     final title = EditText(
           label: '标题',
-          defaultStr: oldTitle,
+          defaultStr: item.title,
         ),
         desc = EditText(
           label: '详细说明',
           maxLines: 3,
-          defaultStr: oldDescribe,
+          defaultStr: item.describe,
         );
     Get.generalDialog(
       pageBuilder: (context, animation1, animation2) => AlertDialog(
@@ -342,7 +325,9 @@ CREATE TABLE $dbName (
                   '标题不能为空'.toast();
                 } else {
                   final descStr = desc.text();
-                  await DbHelper.update(id, title: titleStr, describe: descStr);
+                  item.title = titleStr;
+                  item.describe = descStr;
+                  await DbHelper.update(item);
                   Get.until((route) => Get.isDialogOpen != true);
                   '保存成功'.toast();
                   _loadData();
@@ -370,12 +355,10 @@ CREATE TABLE $dbName (
   void _loadData() async {
     _historyList.clear();
     DbHelper.transaction((db) async {
-      final list = await db.query(DbHelper.dbName, orderBy: 'save_date desc');
-      setState(() {
-        if (list.isNotEmpty) {
-          _historyList.addAll(list);
-        }
-      });
+      final list = await db.query(DbHistory.nameDb, orderBy: 'save_date desc');
+      if (list.isNotEmpty) {
+        _historyList.addAll(list.map((m) => DbHistory()..fromMap(m)).toList());
+      }
     });
   }
 }

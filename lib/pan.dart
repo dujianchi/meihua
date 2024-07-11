@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
+import 'package:meihua/enum/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/document.dart';
 import 'package:meihua/util/exts.dart';
@@ -209,15 +210,16 @@ class _PanState extends State<_Pan> {
                       if (_titleStr!.isEmpty) {
                         '标题不能为空'.toast();
                       } else {
-                        DbHelper.save(
-                          shang: yi.shang,
-                          xia: yi.xia,
-                          bian: yi.dong,
-                          title: _titleStr!,
-                          saveDate: widget.now.millisecondsSinceEpoch,
-                          lunarDate: Lunar.fromDate(widget.now).niceStr(),
-                          describe: _descStr,
-                        );
+                        final dhitory = DbHistory();
+                        dhitory.shang = yi.shang;
+                        dhitory.xia = yi.xia;
+                        dhitory.bian = yi.dong;
+                        dhitory.title = _titleStr!;
+                        dhitory.saveDate = widget.now.millisecondsSinceEpoch;
+                        dhitory.lunarDate =
+                            Lunar.fromDate(widget.now).niceStr();
+                        dhitory.describe = _descStr;
+                        DbHelper.save(dhitory);
                         Get.until((route) => Get.isDialogOpen != true);
                         '保存成功'.toast();
                       }
