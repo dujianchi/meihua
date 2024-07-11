@@ -1,5 +1,5 @@
 import 'package:lunar/calendar/Lunar.dart';
-import 'package:meihua/enum/database/base.dart';
+import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/exts.dart';
 
 class DbHistory extends Base {
@@ -34,6 +34,9 @@ class DbHistory extends Base {
     map['bian'] = bian;
     map['title'] = title;
     map['describe'] = describe;
+    if (syncHash?.isNotEmpty != true) {
+      syncHash = map.toString().md5();
+    }
     map['sync_hash'] = syncHash;
     return map;
   }

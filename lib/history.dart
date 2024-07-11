@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/yi.dart';
-import 'package:meihua/enum/database/db_history.dart';
-import 'package:meihua/enum/database/db_history_sync.dart';
+import 'package:meihua/entity/database/db_history.dart';
+import 'package:meihua/entity/database/db_history_sync.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
@@ -357,7 +357,10 @@ class _HistoryState extends State<History> {
     DbHelper.transaction((db) async {
       final list = await db.query(DbHistory.nameDb, orderBy: 'save_date desc');
       if (list.isNotEmpty) {
-        _historyList.addAll(list.map((m) => DbHistory()..fromMap(m)).toList());
+        setState(() {
+          _historyList
+              .addAll(list.map((m) => DbHistory()..fromMap(m)).toList());
+        });
       }
     });
   }

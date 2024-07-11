@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
-import 'package:meihua/enum/database/db_history.dart';
+import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/document.dart';
 import 'package:meihua/util/exts.dart';

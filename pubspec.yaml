@@ -45,6 +45,8 @@ dependencies:
   webdav_client: ^1.2.2
   # https://pub-web.flutter-io.cn/packages/dio
   dio: ^5.4.3+1
+  # https://pub-web.flutter-io.cn/packages/crypto
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

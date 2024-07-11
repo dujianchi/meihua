@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:lunar/lunar.dart';
-import 'package:meihua/enum/database/base.dart';
+import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:sqflite/sqflite.dart';
 

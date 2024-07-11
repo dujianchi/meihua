@@ -1,6 +1,6 @@
 import 'dart:ffi';
 
-import 'package:meihua/enum/database/base.dart';
+import 'package:meihua/entity/database/base.dart';
 
 class DbConfig extends Base {
   static const nameDb = 'config';
