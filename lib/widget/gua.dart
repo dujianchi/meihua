@@ -148,7 +148,7 @@ class Gua extends StatelessWidget {
           ),
           Center(
             child: DocTooltip(
-                document: 'src/卦/${baGua?.name}.txt',
+                fullname: '${baGua?.name}',
                 widget: Text(
                   baGua?.name ?? '',
                   style: TextStyle(

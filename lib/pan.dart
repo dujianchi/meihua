@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/route_manager.dart';
 import 'package:lunar/lunar.dart';
+import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
-import 'package:meihua/util/document.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/edit_text.dart';
@@ -14,17 +15,8 @@ import 'widget/lunar_clock.dart';
 class Pan extends StatelessWidget {
   static const double spacing = 3;
   static const double aspectRatio = 2.1;
-  static final _cache = {};
-  const Pan({super.key});
 
-  static Future<String?> _getCacheStr(String doc) async {
-    var str = _cache[doc];
-    if (str == null) {
-      str = await Document.read(doc);
-      _cache[doc] = str;
-    }
-    return str;
-  }
+  const Pan({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +36,8 @@ class _Pan extends StatefulWidget {
 
 class _PanState extends State<_Pan> {
   ChongGua? _chongGua;
-  String? _bottomString, _titleStr, _descStr;
+  String? _titleStr, _descStr;
+  TextSpan? _bottomString;
 
   String _getSkText() {
     final dong = widget.yi!.dong;
@@ -52,13 +45,16 @@ class _PanState extends State<_Pan> {
     return str + (_chongGua?.tiyong(dong) ?? '');
   }
 
-  void _changeChongGua(ChongGua chongGua) {
+  void _changeChongGua(ChongGua chongGua) async {
     _chongGua = chongGua;
-    Pan._getCacheStr('src/重卦/${chongGua.gua()?.name()}.txt').then((value) {
+    final db64guas = await DbHelper.query(Db64gua.nameDb,
+        where: 'full_name = ?', whereArgs: [chongGua.gua()!.name()], limit: 1);
+    if (db64guas.isNotEmpty) {
+      final db64gua = Db64gua()..fromMap(db64guas[0]);
       setState(() {
-        _bottomString = value;
+        _bottomString = db64gua.toText(chongGua.bian);
       });
-    });
+    }
   }
 
   @override
@@ -128,7 +124,9 @@ class _PanState extends State<_Pan> {
         ),
         Padding(
           padding: const EdgeInsets.all(10),
-          child: SelectableText(_bottomString ?? ''),
+          child: _bottomString != null
+              ? SelectableText.rich(_bottomString!)
+              : const Text(''),
         ),
       ];
       final sealDate = widget.yi?.historyDate;

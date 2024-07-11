@@ -97,10 +97,7 @@ class ChongGua extends StatelessWidget {
           ],
         ),
         Center(
-          child: DocTooltip(
-            document: 'src/重卦/${name}_t.txt',
-            widget: Text(name),
-          ),
+          child: Text(name),
         ),
       ],
     );
