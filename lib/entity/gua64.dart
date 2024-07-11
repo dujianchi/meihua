@@ -1,4 +1,5 @@
 import 'package:meihua/enum/ba_gua.dart';
+import 'package:meihua/enum/sheng_ke_bihe.dart';
 
 /// 64重卦：上卦、下卦
 class Gua64 {
@@ -163,5 +164,36 @@ class Gua64 {
             return '坤为地';
         }
     }
+  }
+
+  String tiyong(int dong) {
+    final BaGua? ti, yong;
+    if (dong > 3) {
+      ti = xia;
+      yong = shang;
+    } else {
+      ti = shang;
+      yong = xia;
+    }
+    final tk = ti.wuXing.shengKeBihe(yong.wuXing);
+    final String tks;
+    switch (tk) {
+      case ShengKeBihe.shengWo:
+        tks = '用生体，有补益，吉';
+        break;
+      case ShengKeBihe.keWo:
+        tks = '用克体，不利';
+        break;
+      case ShengKeBihe.woSheng:
+        tks = '体生用，有损耗';
+        break;
+      case ShengKeBihe.woKe:
+        tks = '体克用，利，吉';
+        break;
+      case ShengKeBihe.bihe:
+        tks = '体用比和，吉';
+        break;
+    }
+    return '体${ti.name}(${ti.wuXing.name})，用${yong.name}(${yong.wuXing.name})，$tks';
   }
 }

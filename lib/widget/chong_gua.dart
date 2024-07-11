@@ -60,38 +60,8 @@ class ChongGua extends StatelessWidget {
   }
 
   String tiyong(int dong) {
-    final BaGua? ti, yong;
     final Gua64? gua64 = gua();
-    if (dong > 3) {
-      ti = gua64?.xia;
-      yong = gua64?.shang;
-    } else {
-      ti = gua64?.shang;
-      yong = gua64?.xia;
-    }
-    final tk = ti?.wuXing.shengKeBihe(yong!.wuXing);
-    final String tks;
-    switch (tk) {
-      case null:
-        tks = '';
-        break;
-      case ShengKeBihe.shengWo:
-        tks = '用生体，有补益，吉';
-        break;
-      case ShengKeBihe.keWo:
-        tks = '用克体，不利';
-        break;
-      case ShengKeBihe.woSheng:
-        tks = '体生用，有损耗';
-        break;
-      case ShengKeBihe.woKe:
-        tks = '体克用，利，吉';
-        break;
-      case ShengKeBihe.bihe:
-        tks = '体用比和，吉';
-        break;
-    }
-    return '体${ti?.name}(${ti?.wuXing.name})，用${yong?.name}(${yong?.wuXing.name})，$tks';
+    return gua64?.tiyong(dong) ?? '';
   }
 
   Widget _yaoWidget(Gua64 gua64) {
