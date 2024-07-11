@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:meihua/entity/database/base.dart';
 
 class Db64gua extends Base {
@@ -70,5 +71,33 @@ class Db64gua extends Base {
     map['shang_yao'] = shangYao;
     map['shang_yao_js'] = shangYaoJs;
     return map;
+  }
+
+  TextSpan toText([int? dong]) {
+    final children = <InlineSpan>[];
+    final black = const TextStyle(color: Colors.black),
+        grey = const TextStyle(color: Colors.grey),
+        redLighter = TextStyle(color: Colors.redAccent[100]),
+        red = const TextStyle(color: Colors.red);
+    final yao = [guaCi, chuYao, erYao, sanYao, siYao, wuYao, shangYao];
+    final yaoJs = [
+      guaCiJs,
+      chuYaoJs,
+      erYaoJs,
+      sanYaoJs,
+      siYaoJs,
+      wuYaoJs,
+      shangYaoJs
+    ];
+    for (var i = 0; i < yao.length; i++) {
+      if (dong == i) {
+        children.add(TextSpan(text: '${yao[i]}\n', style: red));
+        children.add(TextSpan(text: '${yaoJs[i]}\n', style: redLighter));
+      } else {
+        children.add(TextSpan(text: '${yao[i]}\n', style: black));
+        children.add(TextSpan(text: '${yaoJs[i]}\n', style: grey));
+      }
+    }
+    return TextSpan(children: children);
   }
 }
