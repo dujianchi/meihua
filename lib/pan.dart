@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/route_manager.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
+import 'package:meihua/entity/database/db_8gua.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
@@ -39,20 +40,46 @@ class _PanState extends State<_Pan> {
   String? _titleStr, _descStr;
   TextSpan? _bottomString;
 
-  String _getSkText() {
+  Future<String> _getSkText() async {
     final dong = widget.yi!.dong;
-    final str = dong > 3 ? '上卦为用，下卦为体；' : '下卦为用，上卦为体；';
-    return str + (_chongGua?.tiyong(dong) ?? '');
+    final gua64 = _chongGua?.gua();
+    final shang8 = await Db8gua.fromName(gua64?.shang.name),
+        xia8 = await Db8gua.fromName(gua64?.xia.name);
+    if (_chongGua?.hu == true) {
+      if (dong > 3) {
+        return '''${gua64?.shang.name}：${shang8?.toText() ?? ''}
+${gua64?.xia.name}：${xia8?.toText() ?? ''}
+''';
+      } else {
+        return '''${gua64?.shang.name}：${shang8?.toText() ?? ''}
+${gua64?.xia.name}：${xia8?.toText() ?? ''}
+''';
+      }
+    } else {
+      if (dong > 3) {
+        return '''上卦${gua64?.shang.name ?? ''}为用，下卦${gua64?.xia.name ?? ''}为体；${gua64?.tiyong(dong) ?? ''}
+
+${gua64?.shang.name}：${shang8?.toText() ?? ''}
+${gua64?.xia.name}：${xia8?.toText() ?? ''}
+''';
+      } else {
+        return '''下卦${gua64?.xia.name ?? ''}为用，上卦${gua64?.shang.name ?? ''}为体；${gua64?.tiyong(dong) ?? ''}
+        
+${gua64?.shang.name}：${shang8?.toText() ?? ''}
+${gua64?.xia.name}：${xia8?.toText() ?? ''}
+''';
+      }
+    }
   }
 
   void _changeChongGua(ChongGua chongGua) async {
-    _chongGua = chongGua;
     final db64gua = await Db64gua.fromFullname(chongGua.gua()!.name());
     if (db64gua != null) {
-      setState(() {
-        _bottomString = db64gua.toText(chongGua.hu ? null : chongGua.bian);
-      });
+      _bottomString = db64gua.toText(chongGua.hu ? null : chongGua.bian);
     }
+    setState(() {
+      _chongGua = chongGua;
+    });
   }
 
   @override
@@ -126,7 +153,11 @@ class _PanState extends State<_Pan> {
         ),
         Padding(
           padding: const EdgeInsets.all(10),
-          child: SelectableText(_getSkText()),
+          child: FutureBuilder(
+              future: _getSkText(),
+              builder: (ctx, text) => text.data?.isNotEmpty == true
+                  ? SelectableText(text.data!)
+                  : const Text('')),
         ),
         Padding(
           padding: const EdgeInsets.all(10),
