@@ -64,7 +64,7 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}
 ''';
       } else {
         return '''下卦${gua64?.xia.name ?? ''}为用，上卦${gua64?.shang.name ?? ''}为体；${gua64?.tiyong(dong) ?? ''}
-        
+
 ${gua64?.shang.name}：${shang8?.toText() ?? ''}
 ${gua64?.xia.name}：${xia8?.toText() ?? ''}
 ''';
@@ -75,7 +75,7 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}
   void _changeChongGua(ChongGua chongGua) async {
     final db64gua = await Db64gua.fromFullname(chongGua.gua()!.name());
     if (db64gua != null) {
-      _bottomString = db64gua.toText(chongGua.hu ? null : chongGua.bian);
+      _bottomString = db64gua.toText(dong: chongGua.hu ? null : chongGua.bian);
     }
     setState(() {
       _chongGua = chongGua;

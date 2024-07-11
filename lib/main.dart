@@ -7,7 +7,6 @@ import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/history.dart';
 import 'package:meihua/pan.dart';
-import 'package:meihua/tu_wen.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/lunar_clock.dart';
@@ -137,7 +136,6 @@ class MyApp extends StatelessWidget {
       routes: {
         'pan': (context) => const Pan(),
         'yi': (context) => const YiJing(),
-        'tu': (context) => const TuWen(),
         'ls': (context) => const History(),
       },
       home: Scaffold(
@@ -147,7 +145,6 @@ class MyApp extends StatelessWidget {
             PopupMenuButton(
               itemBuilder: (context) => [
                 const PopupMenuItem(value: 0, child: Text('易经原文')),
-                const PopupMenuItem(value: 1, child: Text('64卦图文')),
                 const PopupMenuItem(value: 2, child: Text('排盘历史')),
               ],
               onSelected: (value) => _actionSelected(value),
@@ -178,9 +175,6 @@ class MyApp extends StatelessWidget {
     switch (value) {
       case 0:
         Get.toNamed('yi');
-        break;
-      case 1:
-        Get.toNamed('tu');
         break;
       case 2:
         Get.toNamed('ls');

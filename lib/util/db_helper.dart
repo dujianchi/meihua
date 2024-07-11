@@ -63,9 +63,12 @@ class DbHelper {
     });
   }
 
-  static Future<void> update<T extends Base>(T data) async {
+  static Future<void> update<T extends Base>(T data,
+      [String idName = 'id']) async {
     await transaction((db) async {
-      await db.update(data.dbName, data.toMap());
+      final map = data.toMap();
+      final id = map.remove(idName);
+      await db.update(data.dbName, map, where: "$idName = ?", whereArgs: [id]);
     });
   }
 
