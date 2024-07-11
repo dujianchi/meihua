@@ -6,6 +6,7 @@ import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/history.dart';
+import 'package:meihua/lei_xiang.dart';
 import 'package:meihua/pan.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
@@ -67,8 +68,7 @@ class MyApp extends StatelessWidget {
     ));
 
     children.add(Center(
-        child: RichText(
-            text: TextSpan(children: [
+        child: SelectableText.rich(TextSpan(children: [
       // 乾一,兑二,离三,震四,巽五,坎六,艮七,坤八
       TextSpan(
           text: '☰${BaGua.qian.name}一 ',
@@ -136,6 +136,7 @@ class MyApp extends StatelessWidget {
       routes: {
         'pan': (context) => const Pan(),
         'yi': (context) => const YiJing(),
+        'lx': (context) => const LeiXiang(),
         'ls': (context) => const History(),
       },
       home: Scaffold(
@@ -145,6 +146,7 @@ class MyApp extends StatelessWidget {
             PopupMenuButton(
               itemBuilder: (context) => [
                 const PopupMenuItem(value: 0, child: Text('易经原文')),
+                const PopupMenuItem(value: 1, child: Text('八卦类象')),
                 const PopupMenuItem(value: 2, child: Text('排盘历史')),
               ],
               onSelected: (value) => _actionSelected(value),
@@ -175,6 +177,9 @@ class MyApp extends StatelessWidget {
     switch (value) {
       case 0:
         Get.toNamed('yi');
+        break;
+      case 1:
+        Get.toNamed('lx');
         break;
       case 2:
         Get.toNamed('ls');

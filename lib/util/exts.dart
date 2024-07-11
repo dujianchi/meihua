@@ -82,6 +82,10 @@ extension StringExtNullable on String? {
       return const {};
     }
   }
+
+  bool get isBlank => this == null || this!.isEmpty || this!.trim().isEmpty;
+  bool get isNotBlank => !isBlank;
+  
 }
 
 extension LunarExt on Lunar {
