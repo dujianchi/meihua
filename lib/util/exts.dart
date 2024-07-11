@@ -74,6 +74,14 @@ extension StringExtNullable on String? {
     final bytes = c.md5.convert(utf8.encode(this!)).bytes;
     return hex(bytes);
   }
+
+  Map<String, dynamic> jsonToMap() {
+    if (this?.isNotEmpty == true) {
+      return jsonDecode(this!);
+    } else {
+      return const {};
+    }
+  }
 }
 
 extension LunarExt on Lunar {
@@ -87,5 +95,10 @@ extension DynamicExt on dynamic {
     if (kDebugMode) {
       debugPrint('${prefix ?? ''}${this?.toString()}');
     }
+  }
+
+  String? toJson() {
+    if (this == null) return null;
+    return jsonEncode(this);
   }
 }

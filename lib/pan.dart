@@ -4,6 +4,7 @@ import 'package:get/route_manager.dart';
 import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/entity/database/db_8gua.dart';
+import 'package:meihua/entity/database/db_history_sync.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
@@ -242,22 +243,7 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}
                     onPressed: () {
                       _titleStr = title.text();
                       _descStr = desc.text();
-                      if (_titleStr!.isEmpty) {
-                        '标题不能为空'.toast();
-                      } else {
-                        final dhitory = DbHistory();
-                        dhitory.shang = yi.shang;
-                        dhitory.xia = yi.xia;
-                        dhitory.bian = yi.dong;
-                        dhitory.title = _titleStr!;
-                        dhitory.saveDate = widget.now.millisecondsSinceEpoch;
-                        dhitory.lunarDate =
-                            Lunar.fromDate(widget.now).niceStr();
-                        dhitory.describe = _descStr;
-                        DbHelper.save(dhitory);
-                        Get.until((route) => Get.isDialogOpen != true);
-                        '保存成功'.toast();
-                      }
+                      _save();
                     },
                     child: const Text('保存')),
               ],
@@ -268,6 +254,32 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}
         break;
       default:
         break;
+    }
+  }
+
+  void _save() async {
+    if (_titleStr!.isEmpty) {
+      '标题不能为空'.toast();
+    } else {
+      final dhitory = DbHistory();
+      dhitory.shang = widget.yi?.shang;
+      dhitory.xia = widget.yi?.xia;
+      dhitory.bian = widget.yi?.dong;
+      dhitory.title = _titleStr!;
+      dhitory.saveDate = widget.now.millisecondsSinceEpoch;
+      dhitory.lunarDate = Lunar.fromDate(widget.now).niceStr();
+      dhitory.describe = _descStr;
+      await DbHelper.save(dhitory);
+
+      final dbHistorySync = DbHistorySync()
+        ..createTime = DateTime.now().millisecondsSinceEpoch
+        ..operate = 1
+        ..uploaded = 0
+        ..data = dhitory.toMap().toJson();
+      await DbHelper.save(dbHistorySync);
+
+      Get.until((route) => Get.isDialogOpen != true);
+      '保存成功'.toast();
     }
   }
 }
