@@ -274,13 +274,20 @@ class _HistoryState extends State<History> {
               onPressed: () => Get.until((route) => Get.isDialogOpen != true),
               child: const Text('取消')),
           TextButton(
-              onPressed: () {
-                DbHelper.transaction((db) async {
-                  await db.delete(item.dbName,
-                      where: "id = ?", whereArgs: [item.id]);
-                  setState(() {
-                    _historyList.removeAt(index);
-                  });
+              onPressed: () async {
+                await DbHelper.delete(item.dbName,
+                    where: 'id = ?', whereArgs: [item.id]);
+
+                final dbHistorySync = DbHistorySync()
+                  ..createTime = DateTime.now().millisecondsSinceEpoch
+                  ..operate = 2
+                  ..uploaded = 0
+                  ..whereArgs = 'id = ?'
+                  ..whereParam = '${item.id}';
+                await DbHelper.save(dbHistorySync);
+
+                setState(() {
+                  _historyList.removeAt(index);
                 });
                 Get.until((route) => Get.isDialogOpen != true);
                 '删除成功'.toast();
@@ -328,6 +335,16 @@ class _HistoryState extends State<History> {
                   item.title = titleStr;
                   item.describe = descStr;
                   await DbHelper.update(item);
+
+                  final dbHistorySync = DbHistorySync()
+                    ..createTime = DateTime.now().millisecondsSinceEpoch
+                    ..operate = 3
+                    ..uploaded = 0
+                    ..data = item.toMap().toJson()
+                    ..whereArgs = 'id = ?'
+                    ..whereParam = '${item.id}';
+                  await DbHelper.save(dbHistorySync);
+
                   Get.until((route) => Get.isDialogOpen != true);
                   '保存成功'.toast();
                   _loadData();
@@ -354,14 +371,12 @@ class _HistoryState extends State<History> {
 
   void _loadData() async {
     _historyList.clear();
-    DbHelper.transaction((db) async {
-      final list = await db.query(DbHistory.nameDb, orderBy: 'save_date desc');
-      if (list.isNotEmpty) {
-        setState(() {
-          _historyList
-              .addAll(list.map((m) => DbHistory()..fromMap(m)).toList());
-        });
-      }
-    });
+    final list =
+        await DbHelper.query(DbHistory.nameDb, orderBy: 'save_date desc');
+    if (list.isNotEmpty) {
+      setState(() {
+        _historyList.addAll(list.map((m) => DbHistory()..fromMap(m)).toList());
+      });
+    }
   }
 }
