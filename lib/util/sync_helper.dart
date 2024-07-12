@@ -173,5 +173,7 @@ class SyncHelper {
     }
   }
 
-  static forceSync() async {}
+  static forceSync() async {
+    // 本地覆盖同步，即代表本地历史所有数据要被删除，然后服务器上的数据也应该被清除
+  }
 }
