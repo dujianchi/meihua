@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
@@ -10,7 +8,6 @@ import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/util/sync_helper.dart';
 import 'package:meihua/widget/edit_text.dart';
-import 'package:webdav_client/webdav_client.dart';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -151,6 +148,7 @@ class _HistoryState extends State<History> {
       final configured = await SyncHelper.isConfigured();
       if (configured) {
         await SyncHelper.sync();
+        _loadData();
       } else {
         _actionSelected(2);
       }
@@ -180,6 +178,7 @@ class _HistoryState extends State<History> {
             TextButton(
                 onPressed: () async {
                   await SyncHelper.forceSync();
+                  _loadData();
                   Get.until((route) => Get.isDialogOpen != true);
                 },
                 child: const Text('覆盖云端数据',
@@ -224,8 +223,8 @@ class _HistoryState extends State<History> {
                   ..createTime = DateTime.now().millisecondsSinceEpoch
                   ..operate = 2
                   ..uploaded = 0
-                  ..whereArgs = 'id = ?'
-                  ..whereParam = '${item.id}';
+                  ..whereArgs = 'sync_hash = ?'
+                  ..whereParam = '${item.syncHash}';
                 await DbHelper.save(dbHistorySync);
 
                 setState(() {
@@ -283,8 +282,8 @@ class _HistoryState extends State<History> {
                     ..operate = 3
                     ..uploaded = 0
                     ..data = item.toMap().toJson()
-                    ..whereArgs = 'id = ?'
-                    ..whereParam = '${item.id}';
+                    ..whereArgs = 'sync_hash = ?'
+                    ..whereParam = '${item.syncHash}';
                   await DbHelper.save(dbHistorySync);
 
                   Get.until((route) => Get.isDialogOpen != true);

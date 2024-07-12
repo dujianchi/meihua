@@ -83,9 +83,13 @@ extension StringExtNullable on String? {
     }
   }
 
+  int toInt([int defVal = 0]) {
+    if (isBlank) return defVal;
+    return int.tryParse(this!) ?? defVal;
+  }
+
   bool get isBlank => this == null || this!.isEmpty || this!.trim().isEmpty;
   bool get isNotBlank => !isBlank;
-  
 }
 
 extension LunarExt on Lunar {

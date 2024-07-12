@@ -1,4 +1,5 @@
 import 'package:meihua/entity/database/base.dart';
+import 'package:meihua/util/db_helper.dart';
 
 class DbHistorySync extends Base {
   static const nameDb = 'history_sync';
@@ -30,5 +31,28 @@ class DbHistorySync extends Base {
     map['where_args'] = whereArgs;
     map['data'] = data;
     return map;
+  }
+
+  static Future<List<DbHistorySync>> query(
+      {bool? distinct,
+      List<String>? columns,
+      String? where,
+      List<Object?>? whereArgs,
+      String? groupBy,
+      String? having,
+      String? orderBy,
+      int? limit,
+      int? offset}) async {
+    final list = await DbHelper.query(nameDb,
+        distinct: distinct,
+        columns: columns,
+        where: where,
+        whereArgs: whereArgs,
+        groupBy: groupBy,
+        having: having,
+        orderBy: orderBy,
+        limit: limit,
+        offset: offset);
+    return list.map((m) => DbHistorySync()..fromMap(m)).toList();
   }
 }
