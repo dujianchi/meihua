@@ -1,4 +1,3 @@
-import 'dart:ffi';
 
 import 'package:meihua/entity/database/base.dart';
 
@@ -7,7 +6,7 @@ class DbConfig extends Base {
   @override
   String get dbName => nameDb;
 
-  Int? id;
+  int? id;
   String? key, val;
 
   @override
