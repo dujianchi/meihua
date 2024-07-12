@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/entity/gua64.dart';
 import 'package:meihua/enum/ba_gua.dart';
-import 'package:meihua/enum/sheng_ke_bihe.dart';
 import 'package:meihua/widget/gua.dart';
 
 /// 重卦，主卦、互卦、变卦

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:sqflite/sqflite.dart';
@@ -65,6 +64,7 @@ class DbHelper {
 
   static Future<void> update<T extends Base>(T data,
       [String idName = 'id']) async {
+    assert(idName.isNotBlank);
     await transaction((db) async {
       final map = data.toMap();
       final id = map.remove(idName);
