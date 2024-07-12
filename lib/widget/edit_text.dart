@@ -7,6 +7,7 @@ class EditText extends StatelessWidget {
   final int? maxLines;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
+  final bool obscureText;
 
   final TextEditingController _textChanged = TextEditingController();
   EditText({
@@ -16,6 +17,7 @@ class EditText extends StatelessWidget {
     this.inputFormatters,
     this.maxLines,
     String? defaultStr,
+    this.obscureText = false,
   })  : _label = label,
         _defaultStr = defaultStr;
 
@@ -28,7 +30,8 @@ class EditText extends StatelessWidget {
       _textChanged.text = _defaultStr!;
     }
     final textField = TextField(
-      maxLines: maxLines,
+      obscureText: obscureText,
+      maxLines: obscureText ? 1 : maxLines,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       controller: _textChanged,

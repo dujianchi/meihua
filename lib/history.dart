@@ -158,14 +158,18 @@ class _HistoryState extends State<History> {
       final etServer = EditText(
             label: '服务器地址',
             defaultStr: oldServerUrl ?? 'https://dav.jianguoyun.com/dav/',
+            maxLines: 1,
           ),
           etAccount = EditText(
             label: '账号',
             defaultStr: oldAccount,
+            maxLines: 1,
           ),
           etPassword = EditText(
             label: '密码',
             defaultStr: oldPassword,
+            obscureText: true,
+            maxLines: 1,
           );
       Get.generalDialog(
         pageBuilder: (context, animation1, animation2) => AlertDialog(
