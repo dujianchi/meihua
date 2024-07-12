@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 
-import 'package:get/utils.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/entity/database/db_history_sync.dart';
 import 'package:meihua/util/config_helper.dart';
@@ -175,5 +173,51 @@ class SyncHelper {
 
   static forceSync() async {
     // 本地覆盖同步，即代表本地历史所有数据要被删除，然后服务器上的数据也应该被清除
+    const dir = '/meihua',
+        lock = '$dir/lock',
+        json = '$dir/sync.json',
+        days = 24 * 60 * 60 * 1000;
+    try {
+      await _createDir(dir);
+      final lockStr = await _getContent(lock);
+      // 判断锁是否有效，默认锁24小时
+      if (lockStr.isBlank ||
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= days) {
+        //将当前时间戳写入 lock 文件
+        await _write(lock, '${DateTime.now().millisecondsSinceEpoch}');
+        // 删除本地历史记录
+        await DbHelper.delete(DbHistorySync.nameDb,
+            where: 'id > ?', whereArgs: [0]);
+        // 构造一个删除记录
+        final dbHistorySyncDelAll = DbHistorySync()
+          ..createTime = DateTime.now().millisecondsSinceEpoch
+          ..operate = 2
+          ..uploaded = 0
+          ..whereArgs = 'id > ?'
+          ..whereParam = '0';
+        await DbHelper.save(dbHistorySyncDelAll);
+        // 查询本地所有记录，构造新增记录
+        final localList = await DbHelper.query(DbHistory.nameDb);
+        for (var dh in localList) {
+          final dbHistorySync = DbHistorySync()
+            ..createTime = DateTime.now().millisecondsSinceEpoch
+            ..operate = 1
+            ..uploaded = 0
+            ..data = dh.toJson();
+          await DbHelper.save(dbHistorySync);
+        }
+        // 上传所有新构造的新增记录
+        final syncList = await DbHelper.query(DbHistorySync.nameDb);
+        await _write(json, syncList.toJson());
+      }
+      '同步完成'.toast();
+    } catch (ex) {
+      ex.log('sync error: $ex');
+      '同步失败：$ex'.toast();
+    } finally {
+      await ConfigHelper.saveConfig(
+          'last_update', '${DateTime.now().millisecondsSinceEpoch}');
+      await _write(lock, '');
+    }
   }
 }
