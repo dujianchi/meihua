@@ -18,8 +18,8 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   final _historyList = <DbHistory>[];
-  final _opacities = <int, bool>{};
-  var _hideAll = true;
+  final _visibles = <int, bool>{};
+  var _showAll = false;
 
   @override
   void initState() {
@@ -32,10 +32,10 @@ class _HistoryState extends State<History> {
     final listview = ListView.separated(
       itemBuilder: (context, index) {
         final item = _historyList[index];
-        final opacity = (_opacities[index] ?? true) ? 0.0 : 1.0;
+        final visible = _visibles[index] == true;
         final contentChildren = [
-          Opacity(
-            opacity: opacity,
+          Visibility(
+            visible: visible,
             child: Text(item.title!,
                 style: const TextStyle(color: Colors.redAccent)),
           ),
@@ -54,8 +54,8 @@ class _HistoryState extends State<History> {
               style: const TextStyle(color: Colors.blueGrey)),
         ];
         if (item.describe?.isNotEmpty == true) {
-          contentChildren.add(Opacity(
-            opacity: opacity,
+          contentChildren.add(Visibility(
+            visible: visible,
             child: Text('详细说明: ${item.describe}',
                 style: const TextStyle(color: Colors.blueAccent)),
           ));
@@ -78,7 +78,7 @@ class _HistoryState extends State<History> {
             );
           },
           onLongPress: () {
-            final hideText = (_opacities[index] ?? true) ? '显示' : '隐藏';
+            final hideText = (_visibles[index] ?? false) ? '隐藏' : '显示';
             Get.bottomSheet(BottomSheet(
                 clipBehavior: Clip.antiAlias,
                 onClosing: () {},
@@ -125,7 +125,7 @@ class _HistoryState extends State<History> {
         actions: [
           PopupMenuButton(
             itemBuilder: (context) => [
-              PopupMenuItem(value: 0, child: Text(_hideAll ? '显示全部' : '隐藏全部')),
+              PopupMenuItem(value: 0, child: Text(_showAll ? '隐藏全部' : '显示全部')),
               const PopupMenuItem(value: 1, child: Text('同步')),
               const PopupMenuItem(value: 2, child: Text('同步设置')),
             ],
@@ -139,9 +139,9 @@ class _HistoryState extends State<History> {
 
   void _actionSelected(index) async {
     if (index == 0) {
-      _hideAll = !_hideAll;
+      _showAll = !_showAll;
       for (var i = 0; i < _historyList.length; i++) {
-        _opacities[i] = _hideAll;
+        _visibles[i] = _showAll;
       }
       setState(() {});
     } else if (index == 1) {
@@ -304,13 +304,9 @@ class _HistoryState extends State<History> {
 
   void _hide(int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
-    final hide = _opacities[index] ?? true;
+    final visible = _visibles[index] ?? false;
     setState(() {
-      if (hide) {
-        _opacities[index] = false;
-      } else {
-        _opacities[index] = true;
-      }
+      _visibles[index] = !visible;
     });
   }
 

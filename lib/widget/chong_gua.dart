@@ -11,8 +11,9 @@ class ChongGua extends StatelessWidget {
   final int? bian;
   final double spacing;
 
+  /// 互其变卦
   bool get huBian =>
-      hu && !(bian == null || (shang != xia && (shang != 1 || shang != 8)));
+      hu && bian != null && shang == xia && (shang == 1 || shang == 8);
 
   const ChongGua(this.shang, this.xia,
       {super.key, this.hu = false, this.bian, this.spacing = 10});
