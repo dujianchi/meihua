@@ -49,8 +49,7 @@ class Db8gua extends Base {
     return '''旺于$guaQiWang
 衰于$guaQiShuai
 $shuLei
-以占卦的人为中心，$houTianFangWei为$name
-''';
+以占卦的人为中心，$houTianFangWei为$name''';
   }
 
   static Future<Db8gua?> fromName(String? name) async {
