@@ -10,6 +10,7 @@ import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/edit_text.dart';
+import 'package:meihua/widget/ti_yong.dart';
 
 import 'widget/lunar_clock.dart';
 
@@ -134,6 +135,10 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
           aspectRatio: Pan.aspectRatio,
           child: Row(
             children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: TiYong(dong: widget.yi!.dong),
+              ),
               zhu,
               hu,
               bian,
