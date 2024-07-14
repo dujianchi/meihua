@@ -91,6 +91,7 @@ class Db64gua extends Base {
       wuYaoJs,
       shangYaoJs
     ];
+    children.add(TextSpan(text: '第$id卦：$fullName\n', style: red));
     for (var i = 0; i < yao.length; i++) {
       if (dong == i) {
         children.add(TextSpan(text: '${yao[i]}\n', style: red));

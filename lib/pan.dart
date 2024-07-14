@@ -48,26 +48,22 @@ class _PanState extends State<_Pan> {
 //     if (_chongGua?.hu == true) {
 //       if (dong > 3) {
 //         return '''${gua64?.shang.name}：${shang8?.toText() ?? ''}
-// ${gua64?.xia.name}：${xia8?.toText() ?? ''}
-// ''';
+// ${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
 //       } else {
 //         return '''${gua64?.shang.name}：${shang8?.toText() ?? ''}
-// ${gua64?.xia.name}：${xia8?.toText() ?? ''}
-// ''';
+// ${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
 //       }
 //     } else {
     if (dong > 3) {
       return '''上卦${gua64?.shang.name ?? ''}为用，下卦${gua64?.xia.name ?? ''}为体；${gua64?.tiyong(dong) ?? ''}
 
 ${gua64?.shang.name}：${shang8?.toText() ?? ''}
-${gua64?.xia.name}：${xia8?.toText() ?? ''}
-''';
+${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
     } else {
       return '''下卦${gua64?.xia.name ?? ''}为用，上卦${gua64?.shang.name ?? ''}为体；${gua64?.tiyong(dong) ?? ''}
 
 ${gua64?.shang.name}：${shang8?.toText() ?? ''}
-${gua64?.xia.name}：${xia8?.toText() ?? ''}
-''';
+${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
     }
     // }
   }
@@ -160,7 +156,7 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}
                   : const Text('')),
         ),
         Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: _bottomString != null
               ? SelectableText.rich(_bottomString!)
               : const Text(''),
