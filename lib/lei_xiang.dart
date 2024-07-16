@@ -57,12 +57,13 @@ ${gua8.leiXiang}''';
               children.add(TextSpan(text: text));
             } else {
               final texts = text.split(_keyword!);
-              for (var ts in texts) {
-                children.add(TextSpan(text: ts));
+              for (var index = 0; index < texts.length - 1; index++) {
+                children.add(TextSpan(text: texts[index]));
                 children.add(TextSpan(
                     text: _keyword,
                     style: const TextStyle(color: Colors.blueAccent)));
               }
+              children.add(TextSpan(text: texts.last));
             }
             return Padding(
               padding: _padding,

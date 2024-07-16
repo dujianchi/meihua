@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart' as c;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:get/utils.dart';
 import 'package:lunar/lunar.dart';
@@ -90,6 +91,33 @@ extension StringExtNullable on String? {
 
   bool get isBlank => this == null || this!.isEmpty || this!.trim().isEmpty;
   bool get isNotBlank => !isBlank;
+
+  void confirmDialog(Future<dynamic> Function() onPressed,
+      {String? title, String? cancel, String? confirm}) {
+    if (isBlank) return;
+    Get.generalDialog(
+      pageBuilder: (context, animation1, animation2) => AlertDialog(
+        title: Text(this!),
+        content: Visibility(visible: title.isNotBlank, child: Text('$title')),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.until((route) => Get.isDialogOpen != true);
+            },
+            child: Text(cancel.isNotBlank ? cancel! : '取消'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await onPressed();
+              Get.until((route) => Get.isDialogOpen != true);
+            },
+            child: Text(confirm.isNotBlank ? confirm! : '确定'),
+          ),
+        ],
+        scrollable: true,
+      ),
+    );
+  }
 }
 
 extension LunarExt on Lunar {
