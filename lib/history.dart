@@ -147,8 +147,10 @@ class _HistoryState extends State<History> {
     } else if (index == 1) {
       final configured = await SyncHelper.isConfigured();
       if (configured) {
-        await SyncHelper.sync();
-        _loadData();
+        '确认同步'.confirmDialog(() async {
+          await SyncHelper.sync();
+          _loadData();
+        }, title: '确认同步吗？');
       } else {
         _actionSelected(2);
       }
@@ -181,9 +183,11 @@ class _HistoryState extends State<History> {
           actions: [
             TextButton(
                 onPressed: () async {
-                  await SyncHelper.forceSync();
-                  _loadData();
-                  Get.until((route) => Get.isDialogOpen != true);
+                  '覆盖同步'.confirmDialog(() async {
+                    await SyncHelper.forceSync();
+                    _loadData();
+                    Get.until((route) => Get.isDialogOpen != true);
+                  }, title: '确定以本地数据覆盖云端数据吗？');
                 },
                 child: const Text('覆盖云端数据',
                     style: TextStyle(color: Colors.redAccent))),
@@ -210,37 +214,23 @@ class _HistoryState extends State<History> {
 
   void _delete(DbHistory item, int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
-    Get.generalDialog(
-      pageBuilder: (context, animation1, animation2) => AlertDialog(
-        title: const Text('删除'),
-        content: Text('确定删除${item.title}吗'),
-        actions: [
-          TextButton(
-              onPressed: () => Get.until((route) => Get.isDialogOpen != true),
-              child: const Text('取消')),
-          TextButton(
-              onPressed: () async {
-                await DbHelper.delete(item.dbName,
-                    where: 'id = ?', whereArgs: [item.id]);
+    '删除'.confirmDialog(() async {
+      await DbHelper.delete(item.dbName, where: 'id = ?', whereArgs: [item.id]);
 
-                final dbHistorySync = DbHistorySync()
-                  ..createTime = DateTime.now().millisecondsSinceEpoch
-                  ..operate = 2
-                  ..uploaded = 0
-                  ..whereArgs = 'sync_hash = ?'
-                  ..whereParam = '${item.syncHash}';
-                await DbHelper.save(dbHistorySync);
+      final dbHistorySync = DbHistorySync()
+        ..createTime = DateTime.now().millisecondsSinceEpoch
+        ..operate = 2
+        ..uploaded = 0
+        ..whereArgs = 'sync_hash = ?'
+        ..whereParam = '${item.syncHash}';
+      await DbHelper.save(dbHistorySync);
 
-                setState(() {
-                  _historyList.removeAt(index);
-                });
-                Get.until((route) => Get.isDialogOpen != true);
-                '删除成功'.toast();
-              },
-              child: const Text('删除'))
-        ],
-      ),
-    );
+      setState(() {
+        _historyList.removeAt(index);
+      });
+      Get.until((route) => Get.isDialogOpen != true);
+      '删除成功'.toast();
+    }, title: '确定删除${item.title}吗');
   }
 
   void _edit(DbHistory item) {
