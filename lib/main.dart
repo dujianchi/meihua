@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:board_datetime_picker/board_datetime_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:lunar/lunar.dart';
@@ -18,7 +19,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  static const _spacing = 10.0;
+  static const _spacing = 8.0;
   final editext1_1 = EditTextNum(label: '数字1'),
       editext2_1 = EditTextNum(label: '数字1'),
       editext2_2 = EditTextNum(label: '数字2'),
@@ -43,7 +44,7 @@ class MyApp extends StatelessWidget {
       message:
           '年、月、日为上卦，年、月、日加时总为下卦。又以年、月、日、时总数取爻。如子年一数，丑年二数，直至亥年十二数。月如正月一数，直至十二月亦作十二数。日数，如初一一数，直至三十日为三十数。以上年、月、日，共计几数，以八除之，以零数作上卦。时如子时一数，直至亥时为十二数。就将年、月、日数总计几数，以八除之，零数作下卦，就以除六数作动爻。',
       child: ElevatedButton(
-        onPressed: _calcCurrentDatetime,
+        onPressed: () => _calcCurrentDatetime(DateTime.now()),
         child: const Text('以当下时辰起卦'),
       ),
     ));
@@ -128,6 +129,11 @@ class MyApp extends StatelessWidget {
       ),
     ));
 
+    children.add(ElevatedButton(
+      onPressed: () => _calcNumber(4),
+      child: const Text('选择指定日期起卦'),
+    ));
+
     return GetMaterialApp(
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -153,13 +159,15 @@ class MyApp extends StatelessWidget {
             )
           ],
         ),
-        body: ListView.separated(
-            padding: const EdgeInsets.all(_spacing),
-            itemBuilder: (conntext, index) => children[index],
-            separatorBuilder: (conntext, index) => const SizedBox(
-                  height: _spacing,
-                ),
-            itemCount: children.length),
+        body: SafeArea(
+          child: ListView.separated(
+              padding: const EdgeInsets.all(_spacing),
+              itemBuilder: (conntext, index) => children[index],
+              separatorBuilder: (conntext, index) => const SizedBox(
+                    height: _spacing,
+                  ),
+              itemCount: children.length),
+        ),
       ),
     );
   }
@@ -173,7 +181,7 @@ class MyApp extends StatelessWidget {
   }
 
   void _actionSelected(int value) {
-    debugPrint('value = $value');
+    'value = $value'.log();
     switch (value) {
       case 0:
         Get.toNamed('yi');
@@ -189,31 +197,32 @@ class MyApp extends StatelessWidget {
     }
   }
 
-  void _calcCurrentDatetime() {
-    final lunar = Lunar.fromDate(DateTime.now());
-    Text(
-      lunar.niceStr(),
-      // style: const TextStyle(fontSize: 20.0),
-    );
+  void _calcCurrentDatetime(DateTime datetime) {
+    final lunar = Lunar.fromDate(datetime);
     final year = lunar.getYearZhiIndex() + 1,
         month = lunar.getMonth().abs(),
         day = lunar.getDay(),
         hour = lunar.getTimeZhiIndex() + 1;
 
-    debugPrint('year = $year, month = $month, day = $day, hour = $hour');
+    'year = $year, month = $month, day = $day, hour = $hour'.log();
 
     final shang = (year + month + day).gua();
     final xia = (shang + hour).gua();
     final dong = (shang + hour).yao();
 
-    debugPrint('shang = $shang, xia = $xia, dong = $dong');
-    debugPrint(
-        'shang = ${BaGua.fromValue(shang).name}, xia = ${BaGua.fromValue(xia).name}, dong = $dong');
+    'shang = $shang, xia = $xia, dong = $dong'.log();
+    'shang = ${BaGua.fromValue(shang).name}, xia = ${BaGua.fromValue(xia).name}, dong = $dong'
+        .log();
 
     goPan(shang, xia, dong);
   }
 
-  void _calcNumber(int numberCount) {
+  /// 1 = 一数起卦
+  /// 2 = 二数起卦
+  /// 3 = 三数起卦
+  /// 0 = 随机起卦
+  /// 4 = 选择指定日期起卦
+  void _calcNumber(int numberCount) async {
     if (numberCount == 1) {
       final num1Str = editext1_1.trim();
       if (num1Str.isEmpty) {
@@ -304,6 +313,15 @@ class MyApp extends StatelessWidget {
       final dong = num3.yao();
       '随机：上卦$shang，下卦$xia，$dong爻动'.toast(10);
       goPan(shang, xia, dong);
+    } else if (numberCount == 4) {
+      final result = await showBoardDateTimePicker(
+        context: Get.context!,
+        pickerType: DateTimePickerType.datetime,
+      );
+      if (result != null) {
+        result.log('selected time = ');
+        _calcCurrentDatetime(result);
+      }
     } else {
       throw UnsupportedError('错误的参数');
     }
