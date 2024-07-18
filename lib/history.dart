@@ -133,7 +133,9 @@ class _HistoryState extends State<History> {
           )
         ],
       ),
-      body: listview,
+      body: SafeArea(
+        child: listview,
+      ),
     );
   }
 

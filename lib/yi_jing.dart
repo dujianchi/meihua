@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/util/db_helper.dart';
+import 'package:meihua/util/exts.dart';
 
 class YiJing extends StatefulWidget {
   const YiJing({super.key});
@@ -12,15 +13,22 @@ class YiJing extends StatefulWidget {
 
 class _StateYiJing extends State<YiJing> {
   final _list = <Db64gua>[];
+  final _ctrl = TextEditingController();
 
   @override
   void initState() {
-    _loadData();
+    _loadData(null);
     super.initState();
   }
 
-  void _loadData() async {
-    final list = await DbHelper.query(Db64gua.nameDb);
+  void _loadData(String? keyword) async {
+    final List<dynamic> list;
+    if (keyword.isNotBlank) {
+      list = await DbHelper.query(Db64gua.nameDb,
+          where: 'full_name like ?', whereArgs: ['${keyword!.trim()}%']);
+    } else {
+      list = await DbHelper.query(Db64gua.nameDb);
+    }
     _list.clear();
     _list.addAll(list.map((map) => Db64gua()..fromMap(map)));
     setState(() {});
@@ -32,12 +40,32 @@ class _StateYiJing extends State<YiJing> {
       appBar: AppBar(
         title: const Text('易经原文'),
       ),
-      body: ListView.builder(
-        itemCount: _list.length,
-        itemBuilder: (ctx, index) => ListTile(
-          title: Text('第${_list[index].id}卦 ${_list[index].fullName!}'),
-          onTap: () {
-            Get.to(YiJingDetail(db64gua: _list[index]));
+      body: SafeArea(
+        child: ListView.builder(
+          itemCount: _list.length + 1,
+          itemBuilder: (ctx, idx) {
+            if (idx == 0) {
+              return Padding(
+                padding: const EdgeInsets.all(10),
+                child: TextField(
+                  controller: _ctrl,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (value) {
+                    value.log();
+                    _loadData(value);
+                  },
+                  decoration: const InputDecoration(hintText: '搜索关键字'),
+                ),
+              );
+            } else {
+              final index = idx - 1;
+              return ListTile(
+                title: Text('第${_list[index].id}卦 ${_list[index].fullName!}'),
+                onTap: () {
+                  Get.to(YiJingDetail(db64gua: _list[index]));
+                },
+              );
+            }
           },
         ),
       ),

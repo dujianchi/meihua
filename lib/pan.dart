@@ -39,40 +39,26 @@ class _Pan extends StatefulWidget {
 class _PanState extends State<_Pan> {
   ChongGua? _chongGua;
   String? _titleStr, _descStr;
-  TextSpan? _bottomString;
+  TextSpan? _middleString, _bottomString;
 
-  Future<String> _getSkText() async {
+  Future<TextSpan> _getSkText() async {
     final dong = widget.yi!.dong;
     final gua64 = _chongGua?.gua();
     final shang8 = await Db8gua.fromName(gua64?.shang.name),
         xia8 = await Db8gua.fromName(gua64?.xia.name);
-//     if (_chongGua?.hu == true) {
-//       if (dong > 3) {
-//         return '''${gua64?.shang.name}：${shang8?.toText() ?? ''}
-// ${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
-//       } else {
-//         return '''${gua64?.shang.name}：${shang8?.toText() ?? ''}
-// ${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
-//       }
-//     } else {
-    if (dong > 3) {
-      return '''上卦${gua64?.shang.name ?? ''}为用，下卦${gua64?.xia.name ?? ''}为体；${gua64?.tiyong(dong) ?? ''}
-
-${gua64?.shang.name}：${shang8?.toText() ?? ''}
-${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
-    } else {
-      return '''下卦${gua64?.xia.name ?? ''}为用，上卦${gua64?.shang.name ?? ''}为体；${gua64?.tiyong(dong) ?? ''}
-
-${gua64?.shang.name}：${shang8?.toText() ?? ''}
-${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
-    }
-    // }
+    return TextSpan(
+        text: gua64?.tiyong(dong),
+        children: [shang8!.toText(), xia8!.toText()]);
   }
 
   void _changeChongGua(ChongGua chongGua) async {
     final db64gua = await Db64gua.fromFullname(chongGua.gua()!.name());
     if (db64gua != null) {
-      _bottomString = db64gua.toText(dong: chongGua.hu ? null : chongGua.bian);
+      _middleString = db64gua.toText(dong: chongGua.hu ? null : chongGua.bian);
+      final shangTxt = await Db8gua.fromName(db64gua.shang),
+          xiaTxt = await Db8gua.fromName(db64gua.xia);
+      _bottomString =
+          TextSpan(children: [shangTxt!.leiXiangStr(), xiaTxt!.leiXiangStr()]);
     }
     setState(() {
       _chongGua = chongGua;
@@ -156,9 +142,15 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
           padding: const EdgeInsets.all(10),
           child: FutureBuilder(
               future: _getSkText(),
-              builder: (ctx, text) => text.data?.isNotEmpty == true
-                  ? SelectableText(text.data!)
+              builder: (ctx, text) => text.data != null
+                  ? SelectableText.rich(text.data!)
                   : const Text('')),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: _middleString != null
+              ? SelectableText.rich(_middleString!)
+              : const Text(''),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -199,12 +191,12 @@ ${gua64?.xia.name}：${xia8?.toText() ?? ''}''';
         title: const Text('梅花易数盘'),
         actions: actions,
       ),
-      body: body,
+      body: SafeArea(child: body),
     );
   }
 
   void _actionSelected(int value) {
-    debugPrint('value = $value');
+    'value = $value'.log();
     switch (value) {
       case 0:
         // todo 保存数据，要有弹窗

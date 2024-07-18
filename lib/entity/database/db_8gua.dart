@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/db_helper.dart';
 
@@ -45,11 +46,24 @@ class Db8gua extends Base {
     return map;
   }
 
-  String toText() {
-    return '''旺于$guaQiWang
-衰于$guaQiShuai
+  TextSpan toText({double fontSize = 14.0}) {
+    final children = <InlineSpan>[];
+    final grey = TextStyle(color: Colors.grey, fontSize: fontSize),
+        red = TextStyle(color: Colors.red, fontSize: fontSize + 2);
+    children.add(TextSpan(text: '\n$name ', style: red));
+    children.add(TextSpan(text: '''旺于$guaQiWang，衰于$guaQiShuai
 $shuLei
-以占卦的人为中心，$houTianFangWei为$name''';
+以占卦的人为中心，$houTianFangWei为$name\n''', style: grey));
+    return TextSpan(children: children);
+  }
+
+  TextSpan leiXiangStr({double fontSize = 14.0}) {
+    final children = <InlineSpan>[];
+    final grey = TextStyle(color: Colors.grey, fontSize: fontSize),
+        red = TextStyle(color: Colors.red, fontSize: fontSize + 2);
+    children.add(TextSpan(text: '$name\n', style: red));
+    children.add(TextSpan(text: '$leiXiang\n', style: grey));
+    return TextSpan(children: children);
   }
 
   static Future<Db8gua?> fromName(String? name) async {
