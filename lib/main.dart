@@ -20,12 +20,36 @@ void main() {
 
 class MyApp extends StatelessWidget {
   static const _spacing = 8.0;
-  final editext1_1 = EditTextNum(label: '数字1'),
-      editext2_1 = EditTextNum(label: '数字1'),
-      editext2_2 = EditTextNum(label: '数字2'),
-      editext3_1 = EditTextNum(label: '上卦数字'),
-      editext3_2 = EditTextNum(label: '下卦数字'),
-      editext3_3 = EditTextNum(label: '变爻数字');
+  final editext1_1 = EditTextNum(
+        label: '数字1',
+        focusNode: FocusNode(),
+        selectAllAfterRequestedFocus: true,
+      ),
+      editext2_1 = EditTextNum(
+        label: '数字1',
+        focusNode: FocusNode(),
+        selectAllAfterRequestedFocus: true,
+      ),
+      editext2_2 = EditTextNum(
+        label: '数字2',
+        focusNode: FocusNode(),
+        selectAllAfterRequestedFocus: true,
+      ),
+      editext3_1 = EditTextNum(
+        label: '上卦数字',
+        focusNode: FocusNode(),
+        selectAllAfterRequestedFocus: true,
+      ),
+      editext3_2 = EditTextNum(
+        label: '下卦数字',
+        focusNode: FocusNode(),
+        selectAllAfterRequestedFocus: true,
+      ),
+      editext3_3 = EditTextNum(
+        label: '变爻数字',
+        focusNode: FocusNode(),
+        selectAllAfterRequestedFocus: true,
+      );
 
   MyApp({super.key});
 
