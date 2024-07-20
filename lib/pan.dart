@@ -55,10 +55,15 @@ class _PanState extends State<_Pan> {
     final db64gua = await Db64gua.fromFullname(chongGua.gua()!.name());
     if (db64gua != null) {
       _middleString = db64gua.toText(dong: chongGua.hu ? null : chongGua.bian);
-      final shangTxt = await Db8gua.fromName(db64gua.shang),
-          xiaTxt = await Db8gua.fromName(db64gua.xia);
-      _bottomString =
-          TextSpan(children: [shangTxt!.leiXiangStr(), xiaTxt!.leiXiangStr()]);
+      if (db64gua.shang != db64gua.xia) {
+        final shangTxt = await Db8gua.fromName(db64gua.shang),
+            xiaTxt = await Db8gua.fromName(db64gua.xia);
+        _bottomString = TextSpan(
+            children: [shangTxt!.leiXiangStr(), xiaTxt!.leiXiangStr()]);
+      } else {
+        final shangTxt = await Db8gua.fromName(db64gua.shang);
+        _bottomString = shangTxt!.leiXiangStr();
+      }
     }
     setState(() {
       _chongGua = chongGua;
