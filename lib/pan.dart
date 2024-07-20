@@ -44,11 +44,16 @@ class _PanState extends State<_Pan> {
   Future<TextSpan> _getSkText() async {
     final dong = widget.yi!.dong;
     final gua64 = _chongGua?.gua();
-    final shang8 = await Db8gua.fromName(gua64?.shang.name),
-        xia8 = await Db8gua.fromName(gua64?.xia.name);
-    return TextSpan(
-        text: gua64?.tiyong(dong),
-        children: [shang8!.toText(), xia8!.toText()]);
+    if (gua64?.shang != gua64?.xia) {
+      final shang8 = await Db8gua.fromName(gua64?.shang.name),
+          xia8 = await Db8gua.fromName(gua64?.xia.name);
+      return TextSpan(
+          text: gua64?.tiyong(dong),
+          children: [shang8!.toText(), xia8!.toText()]);
+    } else {
+      final shang8 = await Db8gua.fromName(gua64?.shang.name);
+      return TextSpan(text: gua64?.tiyong(dong), children: [shang8!.toText()]);
+    }
   }
 
   void _changeChongGua(ChongGua chongGua) async {
