@@ -1,6 +1,7 @@
-
+import 'package:json/json.dart';
 import 'package:meihua/entity/database/base.dart';
 
+@JsonCodable()
 class DbConfig extends Base {
   static const nameDb = 'config';
   @override

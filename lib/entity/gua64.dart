@@ -1,7 +1,9 @@
+import 'package:json/json.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/enum/sheng_ke_bihe.dart';
 
 /// 64重卦：上卦、下卦
+@JsonCodable()
 class Gua64 {
   final BaGua shang, xia;
   Gua64({
