@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:json/json.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/db_helper.dart';
 
+@JsonCodable()
 class Db64gua extends Base {
   static const nameDb = '`64gua`';
   @override
