@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lunar/lunar.dart';
 import 'package:meihua/util/exts.dart';
 
 /// 农历时间显示
@@ -37,7 +36,7 @@ class _LunarClockState extends State<LunarClock> {
 
   @override
   Widget build(BuildContext context) {
-    final lunar = Lunar.fromDate(_current);
+    final lunar = _current.toLunar();
     return SelectableText(
       '当前农历时间: ${lunar.niceStr()}',
       // style: const TextStyle(fontSize: 20.0),

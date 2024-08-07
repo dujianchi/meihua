@@ -118,12 +118,33 @@ extension StringExtNullable on String? {
       ),
     );
   }
+
+  DateTime toDatetimeOrNow() =>
+      this == null ? DateTime.now() : DateTime.parse(this!);
+}
+
+extension DatetimeExt on DateTime {
+  Lunar toLunar() => Lunar.fromDate(this);
 }
 
 extension LunarExt on Lunar {
   /// 当前时间的农历格式化
   String niceStr() =>
-      '${getYearGan()}${getYearZhi()}年 ${getMonthInChinese()}月 ${getDayInChinese()}日 ${getTimeZhi()}时 ${getSeason()}';
+      '${getYearGan()}${getYearZhi()}年 ${getMonthInChinese()}月 ${getDayInChinese()}日 ${getTimeZhi()}时 $seasion';
+
+  String get seasion {
+    final now = getSolar();
+    final jieqiTable = getJieQiTable();
+    final dong = jieqiTable['立冬'];
+    if (dong?.isBefore(now) == true) return '冬';
+    final qiu = jieqiTable['立秋'];
+    if (qiu?.isBefore(now) == true) return '秋';
+    final xia = jieqiTable['立夏'];
+    if (xia?.isBefore(now) == true) return '夏';
+    final chun = jieqiTable['立春'];
+    if (chun?.isBefore(now) == true) return '春';
+    return '冬';
+  }
 }
 
 extension DynamicExt on dynamic {

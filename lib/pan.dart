@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/entity/database/db_8gua.dart';
 import 'package:meihua/entity/database/db_history_sync.dart';
@@ -269,7 +268,7 @@ class _PanState extends State<_Pan> {
       dhitory.bian = widget.yi?.dong;
       dhitory.title = _titleStr!;
       dhitory.saveDate = widget.now.millisecondsSinceEpoch;
-      dhitory.lunarDate = Lunar.fromDate(widget.now).niceStr();
+      dhitory.lunarDate = widget.now.toLunar().niceStr();
       dhitory.describe = _descStr;
       await DbHelper.save(dhitory);
 
