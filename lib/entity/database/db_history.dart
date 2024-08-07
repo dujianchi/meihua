@@ -1,4 +1,3 @@
-import 'package:lunar/calendar/Lunar.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/exts.dart';
 
@@ -45,7 +44,7 @@ class DbHistory extends Base {
     final now = DateTime.now();
     saveDate ??= now.millisecondsSinceEpoch;
     if (lunarDate == null) {
-      final lunar = Lunar.fromDate(now);
+      final lunar = now.toLunar();
       lunarDate = lunar.niceStr();
     }
     return this;

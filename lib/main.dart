@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:board_datetime_picker/board_datetime_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:lunar/lunar.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/history.dart';
@@ -222,7 +221,7 @@ class MyApp extends StatelessWidget {
   }
 
   void _calcCurrentDatetime(DateTime datetime) {
-    final lunar = Lunar.fromDate(datetime);
+    final lunar = datetime.toLunar();
     final year = lunar.getYearZhiIndex() + 1,
         month = lunar.getMonth().abs(),
         day = lunar.getDay(),
@@ -258,7 +257,7 @@ class MyApp extends StatelessWidget {
         '只能输入数字'.toast();
         return;
       }
-      final lunar = Lunar.fromDate(DateTime.now());
+      final lunar = DateTime.now().toLunar();
       final hour = lunar.getTimeZhiIndex() + 1;
       final shang = num1.gua();
       final zong = num1 + hour;

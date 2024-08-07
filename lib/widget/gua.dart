@@ -145,7 +145,9 @@ class Gua extends StatelessWidget {
               children: children,
             ),
           ),
-          Center(
+          Container(
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.only(left: spacing * 4),
             child: Text(
               baGua?.name ?? '',
               style: TextStyle(
