@@ -25,7 +25,7 @@ class _StateYiJing extends State<YiJing> {
     final List<dynamic> list;
     if (keyword.isNotBlank) {
       list = await DbHelper.query(Db64gua.nameDb,
-          where: 'full_name like ?', whereArgs: ['${keyword!.trim()}%']);
+          where: 'full_name like ?', whereArgs: ['%${keyword!.trim()}%']);
     } else {
       list = await DbHelper.query(Db64gua.nameDb);
     }
