@@ -1,8 +1,7 @@
-import 'package:json/json.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/exts.dart';
 
-@JsonCodable()
+// @JsonCodable()
 class DbHistory extends Base {
   static const nameDb = 'history';
   @override

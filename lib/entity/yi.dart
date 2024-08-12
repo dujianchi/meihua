@@ -1,7 +1,5 @@
-import 'package:json/json.dart';
-
 /// 易数：上爻、下爻、动爻
-@JsonCodable()
+// @JsonCodable()
 class Yi {
   final int shang, xia, dong;
   final String? historyDate;
