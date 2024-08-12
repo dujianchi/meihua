@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:json/json.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/db_helper.dart';
 
-@JsonCodable()
+// @JsonCodable()
 class Db8gua extends Base {
   static const nameDb = '`8gua`';
   @override
