@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:sqflite/sqflite.dart' as mobile;
-import 'package:sqflite_common/sqlite_api.dart';
+import 'package:sqflite_common/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as desktop;
 
 typedef DatabaseExec = Future<dynamic> Function(Database db);
@@ -12,19 +12,28 @@ typedef StatementExec = Future<dynamic> Function(Transaction txn);
 
 class DbHelper {
   static final DbHelper _instance = DbHelper._internal();
+  static bool get isUseMobile =>
+      Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
+
   DbHelper._internal() {
-    desktop.sqfliteFfiInit();
+    if (!isUseMobile) {
+      desktop.sqfliteFfiInit();
+    }
   }
   factory DbHelper() {
     return _instance;
   }
 
   static Future<dynamic> database(DatabaseExec exec) async {
-    final databasesPath =
-        Platform.isAndroid || Platform.isIOS || Platform.isMacOS
-            ? await mobile.getDatabasesPath()
-            : await desktop.getDatabasesPath();
-    final path = '$databasesPath/meihua.db';
+    if (!isUseMobile) {
+      databaseFactory = desktop.databaseFactoryFfi;
+    } else {
+      databaseFactory = mobile.databaseFactory;
+    }
+    final databasesPath = isUseMobile
+        ? await mobile.getDatabasesPath()
+        : await desktop.getDatabasesPath();
+    final path = '$databasesPath${Platform.pathSeparator}meihua.db';
     final dbFile = File(path);
     if (!dbFile.existsSync()) {
       final dbDir = Directory(databasesPath);
@@ -35,7 +44,7 @@ class DbHelper {
       await dbFile.writeAsBytes(databaseBytes.buffer.asInt8List());
     }
     path.log('database path = ');
-    Database database = Platform.isAndroid || Platform.isIOS || Platform.isMacOS
+    Database database = isUseMobile
         ? await mobile.openDatabase(
             path,
             version: 1,
