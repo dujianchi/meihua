@@ -3,20 +3,27 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/exts.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' as mobile;
+import 'package:sqflite_common/sqlite_api.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' as desktop;
 
 typedef DatabaseExec = Future<dynamic> Function(Database db);
 typedef StatementExec = Future<dynamic> Function(Transaction txn);
 
 class DbHelper {
   static final DbHelper _instance = DbHelper._internal();
-  DbHelper._internal();
+  DbHelper._internal() {
+    desktop.sqfliteFfiInit();
+  }
   factory DbHelper() {
     return _instance;
   }
 
   static Future<dynamic> database(DatabaseExec exec) async {
-    final databasesPath = await getDatabasesPath();
+    final databasesPath =
+        Platform.isAndroid || Platform.isIOS || Platform.isMacOS
+            ? await mobile.getDatabasesPath()
+            : await desktop.getDatabasesPath();
     final path = '$databasesPath/meihua.db';
     final dbFile = File(path);
     if (!dbFile.existsSync()) {
@@ -28,12 +35,19 @@ class DbHelper {
       await dbFile.writeAsBytes(databaseBytes.buffer.asInt8List());
     }
     path.log('database path = ');
-    Database database = await openDatabase(
-      path,
-      version: 1,
-      onCreate: (Database db, int version) async {},
-      onUpgrade: (db, oldVersion, newVersion) async {},
-    );
+    Database database = Platform.isAndroid || Platform.isIOS || Platform.isMacOS
+        ? await mobile.openDatabase(
+            path,
+            version: 1,
+            onCreate: (Database db, int version) async {},
+            onUpgrade: (db, oldVersion, newVersion) async {},
+          )
+        : await desktop.openDatabase(
+            path,
+            version: 1,
+            onCreate: (Database db, int version) async {},
+            onUpgrade: (db, oldVersion, newVersion) async {},
+          );
     final execResult = await exec(database);
     await database.close();
     return execResult;
