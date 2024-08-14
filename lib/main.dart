@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:board_datetime_picker/board_datetime_picker.dart';
@@ -12,8 +13,26 @@ import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/lunar_clock.dart';
 import 'package:meihua/yi_jing.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
+void main() async {
+  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+    WidgetsFlutterBinding.ensureInitialized();
+    // Must add this line.
+    await windowManager.ensureInitialized();
+
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(640, 960),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.hidden,
+    );
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
   runApp(MyApp());
 }
 
