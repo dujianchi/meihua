@@ -78,6 +78,15 @@ class DbHelper {
     });
   }
 
+  static Future<bool> exists(
+      String tableName, String columnName, dynamic value) async {
+    return await transaction((db) async {
+      final column = await db.query(tableName,
+          columns: [columnName], where: '$columnName = ?', whereArgs: [value]);
+      return column.isNotEmpty;
+    });
+  }
+
   static Future<void> delete(String table,
       {String? where, List<Object?>? whereArgs}) async {
     await transaction((db) async {
@@ -91,6 +100,7 @@ class DbHelper {
     await transaction((db) async {
       final map = data.toMap();
       final id = map.remove(idName);
+      map.removeWhere((k, v) => v == null);
       await db.update(data.dbName, map, where: "$idName = ?", whereArgs: [id]);
     });
   }

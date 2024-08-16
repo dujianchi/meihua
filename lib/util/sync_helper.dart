@@ -97,7 +97,6 @@ class SyncHelper {
         json = '$dir/sync.json',
         days = 24 * 60 * 60 * 1000;
     try {
-      final lastUpdate = (await ConfigHelper.getConfig('last_update')).toInt();
       await _createDir(dir);
       final lockStr = await _getContent(lock);
       // 判断锁是否有效，默认锁24小时
@@ -109,31 +108,26 @@ class SyncHelper {
         final jsonStr = await _getContent(json);
         final jsonArr =
             jsonStr.isNotBlank ? jsonDecode(jsonStr) as List<dynamic> : [];
+        // 线上待同步的
         final dbHistorySyncOnline =
             jsonArr.map((m) => DbHistorySync()..fromMap(m)).toList();
+        // 本地所有的
         final dbHistorySyncLocalList = await DbHistorySync.query();
-        // 线上数据过滤掉本地的
-        final onlineToLocal = dbHistorySyncOnline.where((hs) {
-          if ((hs.createTime ?? -1) < lastUpdate) return false;
-          if (hs.operate == 2) return true;
-          final hsm = DbHistory()..fromMap(hs.data.jsonToMap());
-          final localMatched = dbHistorySyncLocalList.where(
-            (hsl) {
-              final hslm = DbHistory()..fromMap(hsl.data.jsonToMap());
-              return hsm.syncHash == hslm.syncHash;
-            },
-          );
-          return localMatched.isEmpty;
-        }).toList();
+        // 本地所有未上传的
+        final localToOnline =
+            dbHistorySyncLocalList.where((hs) => hs.uploaded == 0).toList();
+        // 本地未上传+线上的
+        dbHistorySyncOnline.addAll(localToOnline);
         // 数据按时间排序
-        onlineToLocal
+        dbHistorySyncOnline
             .sort((a, b) => a.createTime?.compareTo(b.createTime ?? 0) ?? 0);
         // 按照 1=增 2=删 3=改 的逻辑处理数据
-        for (var hs in onlineToLocal) {
+        for (var hs in dbHistorySyncOnline) {
           if (hs.operate == 1 || hs.operate == 3) {
             final dh = DbHistory()..fromMap(hs.data.jsonToMap());
-            dh.id == null;
-            if (hs.operate == 1) {
+            dh.id = null;
+            if (hs.operate == 1 &&
+                !await DbHelper.exists(dh.dbName, 'sync_hash', dh.syncHash)) {
               await DbHelper.save(dh);
             } else {
               await DbHelper.update(dh, 'sync_hash');
@@ -145,19 +139,11 @@ class SyncHelper {
             }
           }
         }
-        // 本地所有未上传的
-        final localToOnline =
-            dbHistorySyncLocalList.where((hs) => hs.uploaded == 0).toList();
+        await _write(json,
+            dbHistorySyncOnline.map((hs) => hs.toMap()).toList().toJson());
         for (var hs in localToOnline) {
           hs.uploaded = 1;
           await DbHelper.update(hs);
-        }
-        localToOnline.addAll(onlineToLocal);
-        if (localToOnline.isNotEmpty) {
-          localToOnline
-              .sort((a, b) => a.createTime?.compareTo(b.createTime ?? 0) ?? 0);
-          await _write(
-              json, localToOnline.map((hs) => hs.toMap()).toList().toJson());
         }
       }
       '同步完成'.toast();
@@ -165,8 +151,6 @@ class SyncHelper {
       ex.log('sync error: $ex');
       '同步失败：$ex'.toast();
     } finally {
-      await ConfigHelper.saveConfig(
-          'last_update', '${DateTime.now().millisecondsSinceEpoch}');
       await _write(lock, '');
     }
   }
@@ -215,8 +199,6 @@ class SyncHelper {
       ex.log('sync error: $ex');
       '同步失败：$ex'.toast();
     } finally {
-      await ConfigHelper.saveConfig(
-          'last_update', '${DateTime.now().millisecondsSinceEpoch}');
       await _write(lock, '');
     }
   }
