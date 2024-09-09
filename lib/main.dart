@@ -250,8 +250,8 @@ class MyApp extends StatelessWidget {
     'year = $year, month = $month, day = $day, hour = $hour'.log();
 
     final shang = (year + month + day).gua();
-    final xia = (shang + hour).gua();
-    final dong = (shang + hour).yao();
+    final xia = (year + month + day + hour).gua();
+    final dong = (year + month + day + hour).yao();
 
     'shang = $shang, xia = $xia, dong = $dong'.log();
     'shang = ${BaGua.fromValue(shang).name}, xia = ${BaGua.fromValue(xia).name}, dong = $dong'
