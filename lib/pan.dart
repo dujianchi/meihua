@@ -36,6 +36,7 @@ class _Pan extends StatefulWidget {
 }
 
 class _PanState extends State<_Pan> {
+  final dhitory = DbHistory();
   ChongGua? _chongGua;
   String? _titleStr, _descStr;
   TextSpan? _middleString, _bottomString;
@@ -244,7 +245,7 @@ class _PanState extends State<_Pan> {
                     onPressed: () {
                       _titleStr = title.text();
                       _descStr = desc.text();
-                      _save();
+                      _saveOrUpdate();
                     },
                     child: const Text('保存')),
               ],
@@ -258,29 +259,60 @@ class _PanState extends State<_Pan> {
     }
   }
 
-  void _save() async {
+  void _saveOrUpdate() async {
     if (_titleStr!.isEmpty) {
       '标题不能为空'.toast();
     } else {
-      final dhitory = DbHistory();
-      dhitory.shang = widget.yi?.shang;
-      dhitory.xia = widget.yi?.xia;
-      dhitory.bian = widget.yi?.dong;
-      dhitory.title = _titleStr!;
-      dhitory.saveDate = widget.now.millisecondsSinceEpoch;
-      dhitory.lunarDate = widget.now.toLunar().niceStr();
-      dhitory.describe = _descStr;
-      await DbHelper.save(dhitory);
-
-      final dbHistorySync = DbHistorySync()
-        ..createTime = DateTime.now().millisecondsSinceEpoch
-        ..operate = 1
-        ..uploaded = 0
-        ..data = dhitory.toMap().toJson();
-      await DbHelper.save(dbHistorySync);
+      if (dhitory.id == null) {
+        await _saveHistory();
+      } else {
+        await _updateHistory();
+      }
 
       Get.until((route) => Get.isDialogOpen != true);
       '保存成功'.toast();
     }
+  }
+
+  Future<void> _saveHistory() async {
+    dhitory.shang = widget.yi?.shang;
+    dhitory.xia = widget.yi?.xia;
+    dhitory.bian = widget.yi?.dong;
+    dhitory.title = _titleStr!;
+    dhitory.saveDate = widget.now.millisecondsSinceEpoch;
+    dhitory.lunarDate = widget.now.toLunar().niceStr();
+    dhitory.describe = _descStr;
+    await DbHelper.save(dhitory);
+
+    final dbHistorySync = DbHistorySync()
+      ..createTime = DateTime.now().millisecondsSinceEpoch
+      ..operate = 1
+      ..uploaded = 0
+      ..data = dhitory.toMap().toJson();
+    await DbHelper.save(dbHistorySync);
+
+    if (dhitory.id == null) {
+      final saved = await DbHelper.query(dhitory.dbName,
+          where: 'sync_hash = ?', whereArgs: [dhitory.syncHash]);
+      final id = saved.firstOrNull?['id']?.toString().toInt(-1);
+      if (id != null && id > 0) {
+        dhitory.id = id;
+      }
+    }
+  }
+
+  Future<void> _updateHistory() async {
+    dhitory.title = _titleStr!;
+    dhitory.describe = _descStr;
+    await DbHelper.update(dhitory);
+
+    final dbHistorySync = DbHistorySync()
+      ..createTime = DateTime.now().millisecondsSinceEpoch
+      ..operate = 3
+      ..uploaded = 0
+      ..data = dhitory.toMap().toJson()
+      ..whereArgs = 'sync_hash = ?'
+      ..whereParam = '${dhitory.syncHash}';
+    await DbHelper.save(dbHistorySync);
   }
 }
