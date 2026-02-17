@@ -7,7 +7,9 @@ class DbHistory extends Base {
   @override
   String get dbName => nameDb;
 
-  int? id, saveDate, shang, xia, bian;
+  @override
+  int? id;
+  int? saveDate, shang, xia, bian;
   String? lunarDate, title, describe, syncHash;
 
   @override

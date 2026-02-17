@@ -6,6 +6,7 @@ class DbConfig extends Base {
   @override
   String get dbName => nameDb;
 
+  @override
   int? id;
   String? key, val;
 

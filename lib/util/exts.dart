@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:get/utils.dart';
 import 'package:lunar/lunar.dart';
+import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/enum/ba_gua.dart';
-import 'package:sqflite/utils/utils.dart';
 
 extension IntExt on int {
   // 卦数取余
@@ -47,6 +47,14 @@ extension IntExtNullable on int? {
   }
 }
 
+String _hex(List<int> bytes) {
+  final buffer = StringBuffer();
+  for (final byte in bytes) {
+    buffer.write(byte.toRadixString(16).padLeft(2, '0'));
+  }
+  return buffer.toString();
+}
+
 extension StringExtNullable on String? {
   /// 字符串为null处理
   String or([String defalutStr = '']) {
@@ -73,7 +81,7 @@ extension StringExtNullable on String? {
   String? md5() {
     if (this == null) return null;
     final bytes = c.md5.convert(utf8.encode(this!)).bytes;
-    return hex(bytes);
+    return _hex(bytes);
   }
 
   Map<String, dynamic> jsonToMap() {
@@ -157,5 +165,20 @@ extension DynamicExt on dynamic {
   String? toJson() {
     if (this == null) return null;
     return jsonEncode(this);
+  }
+}
+
+extension IterableExt on Iterable? {
+  bool get isNullOrEmpty => this == null || this!.isEmpty;
+  bool get isNoneEmpty => !isNullOrEmpty;
+}
+
+extension BaseExt on Base? {
+  List<Base> get toList {
+    final list = <Base>[];
+    if (this != null) {
+      list.add(this!);
+    }
+    return list;
   }
 }

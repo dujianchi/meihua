@@ -217,13 +217,13 @@ class _HistoryState extends State<History> {
   void _delete(DbHistory item, int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
     '删除'.confirmDialog(() async {
-      await DbHelper.delete(item.dbName, where: 'id = ?', whereArgs: [item.id]);
+      await DbHelper.delete(item.dbName, (t) => t.toMap()['id'] == item.id);
 
       final dbHistorySync = DbHistorySync()
         ..createTime = DateTime.now().millisecondsSinceEpoch
         ..operate = 2
         ..uploaded = 0
-        ..whereArgs = 'sync_hash = ?'
+        ..whereArgs = 'sync_hash'
         ..whereParam = '${item.syncHash}';
       await DbHelper.save(dbHistorySync);
 
@@ -278,7 +278,7 @@ class _HistoryState extends State<History> {
                     ..operate = 3
                     ..uploaded = 0
                     ..data = item.toMap().toJson()
-                    ..whereArgs = 'sync_hash = ?'
+                    ..whereArgs = 'sync_hash'
                     ..whereParam = '${item.syncHash}';
                   await DbHelper.save(dbHistorySync);
 
@@ -304,11 +304,16 @@ class _HistoryState extends State<History> {
 
   void _loadData() async {
     _historyList.clear();
-    final list =
-        await DbHelper.query(DbHistory.nameDb, orderBy: 'save_date desc');
-    if (list.isNotEmpty) {
+    final list = (await DbHelper.query(DbHistory.nameDb, (ls) => ls))?.toList()
+      ?..sort((a, b) => b
+          .toMap()['save_date']
+          .toString()
+          .toInt()
+          .compareTo(a.toMap()['save_date'].toString().toInt()));
+    if (list.isNoneEmpty) {
       setState(() {
-        _historyList.addAll(list.map((m) => DbHistory()..fromMap(m)).toList());
+        _historyList
+            .addAll(list!.map((m) => DbHistory()..fromMap(m.toMap())).toList());
       });
     }
   }

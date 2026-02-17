@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/db_helper.dart';
+import 'package:meihua/util/exts.dart';
 
 // @JsonCodable()
 class Db8gua extends Base {
-  static const nameDb = '`8gua`';
+  static const nameDb = '8gua';
   @override
   String get dbName => nameDb;
 
-  int? id, xianTianShu, houTianShu;
+  @override
+  int? id;
+  int? xianTianShu, houTianShu;
   String? name,
       shuLei,
       leiXiang,
@@ -70,9 +73,9 @@ $shuLei
   static Future<Db8gua?> fromName(String? name) async {
     if (name?.isNotEmpty == true) {
       final db8guas = await DbHelper.query(Db8gua.nameDb,
-          where: 'name = ?', whereArgs: [name], limit: 1);
-      if (db8guas.isEmpty) return null;
-      return Db8gua()..fromMap(db8guas[0]);
+          (ls) => ls?.firstWhere((t) => t.toMap()['name'] == name).toList);
+      if (db8guas.isNullOrEmpty) return null;
+      return Db8gua()..fromMap(db8guas!.first.toMap());
     }
     return null;
   }

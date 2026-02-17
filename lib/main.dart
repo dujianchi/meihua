@@ -4,9 +4,16 @@ import 'dart:math';
 import 'package:board_datetime_picker/board_datetime_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:meihua/entity/database/db_64gua.dart';
+import 'package:meihua/entity/database/db_8gua.dart';
+import 'package:meihua/entity/database/db_config.dart';
+import 'package:meihua/entity/database/db_history.dart';
+import 'package:meihua/entity/database/db_history_sync.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/enum/ba_gua.dart';
 import 'package:meihua/history.dart';
+import 'package:meihua/hive/hive_registrar.g.dart';
 import 'package:meihua/lei_xiang.dart';
 import 'package:meihua/pan.dart';
 import 'package:meihua/util/exts.dart';
@@ -16,13 +23,15 @@ import 'package:meihua/yi_jing.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  Hive.registerAdapters();
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-    WidgetsFlutterBinding.ensureInitialized();
     // Must add this line.
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(400, 800),
+      size: Size(600, 600),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
@@ -34,6 +43,11 @@ void main() async {
       await windowManager.focus();
     });
   }
+  await Hive.openBox<Db8gua>(Db8gua.nameDb);
+  await Hive.openBox<Db64gua>(Db64gua.nameDb);
+  await Hive.openBox<DbConfig>(DbConfig.nameDb);
+  await Hive.openBox<DbHistory>(DbHistory.nameDb);
+  await Hive.openBox<DbHistorySync>(DbHistorySync.nameDb);
   runApp(MyApp());
 }
 
@@ -74,7 +88,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final children = <Widget>[];
+    final children = <Widget>[
+      const Padding(padding: EdgeInsetsGeometry.only(top: 4))
+    ];
 
     children.add(const Text(
       '不(发生变)动不占，不因(有)事不占',
@@ -176,6 +192,8 @@ class MyApp extends StatelessWidget {
       onPressed: () => _calcNumber(4),
       child: const Text('选择指定日期起卦'),
     ));
+
+    children.add(const Padding(padding: EdgeInsetsGeometry.only(bottom: 10)));
 
     return GetMaterialApp(
       theme: ThemeData(

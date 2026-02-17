@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/util/db_helper.dart';
+import 'package:meihua/util/exts.dart';
 
 // @JsonCodable()
 class Db64gua extends Base {
-  static const nameDb = '`64gua`';
+  static const nameDb = '64gua';
   @override
   String get dbName => nameDb;
+  @override
   int? id;
   String? name,
       fullName,
@@ -107,10 +109,12 @@ class Db64gua extends Base {
 
   static Future<Db64gua?> fromFullname(String? fullName) async {
     if (fullName?.isNotEmpty == true) {
-      final db64guas = await DbHelper.query(Db64gua.nameDb,
-          where: 'full_name = ?', whereArgs: [fullName], limit: 1);
-      if (db64guas.isNotEmpty) {
-        return Db64gua()..fromMap(db64guas[0]);
+      final db64guas = await DbHelper.query(
+          Db64gua.nameDb,
+          (ls) =>
+              ls?.firstWhere((t) => t.toMap()['full_name'] == fullName).toList);
+      if (db64guas.isNoneEmpty) {
+        return Db64gua()..fromMap(db64guas!.first.toMap());
       }
     }
     return null;
