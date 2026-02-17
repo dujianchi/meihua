@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
@@ -27,6 +30,31 @@ class DbHelper {
 
   factory DbHelper() {
     return _instance;
+  }
+
+  static void initDataIfNeed() async {
+    if (_instance._8guaBox.isEmpty) {
+      // 读取 assets/_8gua_.json
+      final json = await rootBundle.loadString('assets/_8gua_.json');
+      final list = jsonDecode(json) as List<dynamic>;
+      final data = list.map((e) => Db8gua()..fromMap(e)).toList();
+      final putData = <dynamic, Db8gua>{};
+      for (var d in data) {
+        putData[d.id] = d;
+      }
+      await _instance._8guaBox.putAll(putData);
+    }
+    if (_instance._64guaBox.isEmpty) {
+      // 读取 assets/_64gua_.json
+      final json = await rootBundle.loadString('assets/_64gua_.json');
+      final list = jsonDecode(json) as List<dynamic>;
+      final data = list.map((e) => Db64gua()..fromMap(e)).toList();
+      final putData = <dynamic, Db64gua>{};
+      for (var d in data) {
+        putData[d.id] = d;
+      }
+      await _instance._64guaBox.putAll(putData);
+    }
   }
 
   static Box<Base>? _database(Base data) {
@@ -77,10 +105,11 @@ class DbHelper {
   }
 
   static Future<void> update<T extends Base>(T data,
-      [String idName = 'id']) async {
+      [String idName = 'id', dynamic idArg]) async {
     assert(idName.isNotBlank);
     final box = _database(data);
-    final first = box?.values.firstWhere((d) => d.toMap()[idName] == data.id);
+    final first =
+        box?.values.firstWhere((d) => d.toMap()[idName] == (idArg ?? data.id));
     if (first != null) {
       box?.put(first.id, data);
     }
@@ -89,6 +118,7 @@ class DbHelper {
   static Future<Iterable<Base>?> query(String table,
       Iterable<Base>? Function(Iterable<Base>? list) filter) async {
     final box = _databaseByName(table);
-    return filter(box?.values.toList());
+    if (box?.isNotEmpty != true) return filter(<Base>[]);
+    return filter(box!.values.toList());
   }
 }

@@ -16,6 +16,7 @@ import 'package:meihua/history.dart';
 import 'package:meihua/hive/hive_registrar.g.dart';
 import 'package:meihua/lei_xiang.dart';
 import 'package:meihua/pan.dart';
+import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/lunar_clock.dart';
@@ -48,6 +49,7 @@ void main() async {
   await Hive.openBox<DbConfig>(DbConfig.nameDb);
   await Hive.openBox<DbHistory>(DbHistory.nameDb);
   await Hive.openBox<DbHistorySync>(DbHistorySync.nameDb);
+  DbHelper.initDataIfNeed();
   runApp(MyApp());
 }
 
