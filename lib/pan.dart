@@ -293,8 +293,8 @@ class _PanState extends State<_Pan> {
 
     if (dhitory.id == null) {
       final saved = await DbHelper.query(dhitory.dbName,
-          where: 'sync_hash = ?', whereArgs: [dhitory.syncHash]);
-      final id = saved.firstOrNull?['id']?.toString().toInt(-1);
+          (ls) => ls?.where((t) => t.toMap()['sync_hash'] == dhitory.syncHash));
+      final id = saved?.firstOrNull?.toMap()['id']?.toString().toInt(-1);
       if (id != null && id > 0) {
         dhitory.id = id;
       }
@@ -311,7 +311,7 @@ class _PanState extends State<_Pan> {
       ..operate = 3
       ..uploaded = 0
       ..data = dhitory.toMap().toJson()
-      ..whereArgs = 'sync_hash = ?'
+      ..whereArgs = 'sync_hash'
       ..whereParam = '${dhitory.syncHash}';
     await DbHelper.save(dbHistorySync);
   }

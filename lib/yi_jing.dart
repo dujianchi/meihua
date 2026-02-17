@@ -22,12 +22,20 @@ class _StateYiJing extends State<YiJing> {
   }
 
   void _loadData(String? keyword) async {
-    final List<dynamic> list;
+    final List<Map<String, dynamic>> list;
     if (keyword.isNotBlank) {
-      list = await DbHelper.query(Db64gua.nameDb,
-          where: 'full_name like ?', whereArgs: ['%${keyword!.trim()}%']);
+      list = (await DbHelper.query(
+                  Db64gua.nameDb,
+                  (ls) => ls?.where((t) =>
+                      t.toMap()['full_name'].toString().contains(keyword!))))
+              ?.map((t) => t.toMap())
+              .toList() ??
+          [];
     } else {
-      list = await DbHelper.query(Db64gua.nameDb);
+      list = (await DbHelper.query(Db64gua.nameDb, (ls) => ls))
+              ?.map((t) => t.toMap())
+              .toList() ??
+          [];
     }
     _list.clear();
     _list.addAll(list.map((map) => Db64gua()..fromMap(map)));

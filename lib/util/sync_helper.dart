@@ -112,7 +112,7 @@ class SyncHelper {
         final dbHistorySyncOnline =
             jsonArr.map((m) => DbHistorySync()..fromMap(m)).toList();
         // 本地所有的
-        final dbHistorySyncLocalList = await DbHistorySync.query();
+        final dbHistorySyncLocalList = await DbHistorySync.query((ls) => ls);
         // 本地所有未上传的
         final localToOnline =
             dbHistorySyncLocalList.where((hs) => hs.uploaded == 0).toList();
@@ -135,7 +135,9 @@ class SyncHelper {
           } else if (hs.operate == 2) {
             if (hs.whereArgs.isNotBlank && hs.whereParam.isNotBlank) {
               await DbHelper.delete(DbHistory.nameDb,
-                  where: hs.whereArgs, whereArgs: [hs.whereParam]);
+                  (dhs) => dhs.toMap()[hs.whereArgs] == hs.whereParam);
+            } else {
+              await DbHelper.delete(DbHistory.nameDb, (dhs) => true);
             }
           }
         }
@@ -170,18 +172,19 @@ class SyncHelper {
         //将当前时间戳写入 lock 文件
         await _write(lock, '${DateTime.now().millisecondsSinceEpoch}');
         // 删除本地历史记录
-        await DbHelper.delete(DbHistorySync.nameDb,
-            where: 'id > ?', whereArgs: [0]);
+        await DbHelper.delete(DbHistorySync.nameDb, (ls) => true);
         // 构造一个删除记录
         final dbHistorySyncDelAll = DbHistorySync()
           ..createTime = DateTime.now().millisecondsSinceEpoch
           ..operate = 2
           ..uploaded = 0
-          ..whereArgs = 'id > ?'
-          ..whereParam = '0';
+          ..whereArgs = ''
+          ..whereParam = '';
         await DbHelper.save(dbHistorySyncDelAll);
         // 查询本地所有记录，构造新增记录
-        final localList = await DbHelper.query(DbHistory.nameDb);
+        final localList =
+            (await DbHelper.query(DbHistory.nameDb, (ls) => ls))?.toList() ??
+                [];
         for (var dh in localList) {
           final dbHistorySync = DbHistorySync()
             ..createTime = DateTime.now().millisecondsSinceEpoch
@@ -191,7 +194,7 @@ class SyncHelper {
           await DbHelper.save(dbHistorySync);
         }
         // 上传所有新构造的新增记录
-        final syncList = await DbHelper.query(DbHistorySync.nameDb);
+        final syncList = await DbHelper.query(DbHistorySync.nameDb, (ls) => ls);
         await _write(json, syncList.toJson());
       }
       '同步完成'.toast();

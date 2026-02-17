@@ -81,17 +81,28 @@ ${gua8.leiXiang}''';
 
   void _loadData(String? keyword) async {
     _keyword = keyword;
-    final List<Map<String, dynamic>> list;
+    final List<Map<String, dynamic>>? list;
     if (keyword.isNotBlank) {
-      final kw = '%$keyword%';
-      final args = [kw, kw, keyword];
-      list = await DbHelper.query(Db8gua.nameDb,
-          where: 'shu_lei like ? or lei_xiang like ? or name = ?', whereArgs: args);
+      list = (await DbHelper.query(
+              Db8gua.nameDb,
+              (ls) => ls?.where((t) {
+                    final json = t.toMap();
+                    final shuLei = json['shu_lei']?.toString() ?? '';
+                    final leiXiang = json['lei_xiang']?.toString() ?? '';
+                    final name = json['name']?.toString() ?? '';
+                    return shuLei.contains(keyword!) ||
+                        leiXiang.contains(keyword) ||
+                        name == keyword;
+                  })))
+          ?.map((t) => t.toMap())
+          .toList();
     } else {
-      list = await DbHelper.query(Db8gua.nameDb);
+      list = (await DbHelper.query(Db8gua.nameDb, (ls) => ls))
+          ?.map((t) => t.toMap())
+          .toList();
     }
     _bagua.clear();
-    _bagua.addAll(list.map((m) => Db8gua()..fromMap(m)));
+    _bagua.addAll(list?.map((m) => Db8gua()..fromMap(m)) ?? []);
     setState(() {});
   }
 }

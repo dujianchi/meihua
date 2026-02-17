@@ -7,7 +7,9 @@ class DbHistorySync extends Base {
   @override
   String get dbName => nameDb;
 
-  int? id, createTime, operate, uploaded;
+  @override
+  int? id;
+  int? createTime, operate, uploaded;
   String? whereParam, whereArgs, data;
 
   @override
@@ -35,25 +37,8 @@ class DbHistorySync extends Base {
   }
 
   static Future<List<DbHistorySync>> query(
-      {bool? distinct,
-      List<String>? columns,
-      String? where,
-      List<Object?>? whereArgs,
-      String? groupBy,
-      String? having,
-      String? orderBy,
-      int? limit,
-      int? offset}) async {
-    final list = await DbHelper.query(nameDb,
-        distinct: distinct,
-        columns: columns,
-        where: where,
-        whereArgs: whereArgs,
-        groupBy: groupBy,
-        having: having,
-        orderBy: orderBy,
-        limit: limit,
-        offset: offset);
-    return list.map((m) => DbHistorySync()..fromMap(m)).toList();
+      Iterable<Base>? Function(Iterable<Base>? list) filter) async {
+    final list = await DbHelper.query(nameDb, filter);
+    return list?.map((m) => DbHistorySync()..fromMap(m.toMap())).toList() ?? [];
   }
 }

@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.1.2+12
 
 environment:
-  sdk: '>=3.5.0 <4.0.0'
+  sdk: '>=3.5.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -30,34 +30,34 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # https://pub-web.flutter-io.cn/packages/lunar/install
-  lunar: ^1.7.0
+  # https://pub.dev/packages/lunar/install
+  lunar: ^1.7.8
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
 
-  # https://pub.dev/packages/sqflite
-  sqflite: ^2.3.3+1
-  # https://pub.dev/packages/sqflite_common_ffi
-  sqflite_common_ffi: ^2.3.3
-  # https://pub.dev/packages/sqflite_common
-  sqflite_common: ^2.5.4
+  # https://pub.dev/packages/hive_ce
+  hive_ce: ^2.19.3
+  # https://pub.dev/packages/hive_ce_flutter
+  hive_ce_flutter: ^2.3.4
+  # https://pub.dev/packages/path_provider
+  path_provider: ^2.1.5
 
-  # https://pub-web.flutter-io.cn/packages/get
-  get: ^4.6.6
-  # https://pub-web.flutter-io.cn/packages/webdav_client
+  # https://pub.dev/packages/get
+  get: ^4.7.3
+  # https://pub.dev/packages/webdav_client
   webdav_client: ^1.2.2
-  # https://pub-web.flutter-io.cn/packages/dio
-  dio: ^5.4.3+1
-  # https://pub-web.flutter-io.cn/packages/crypto
-  crypto: ^3.0.3
+  # https://pub.dev/packages/dio
+  dio: ^5.9.1
+  # https://pub.dev/packages/crypto
+  crypto: ^3.0.7
   # https://pub.dev/packages/board_datetime_picker
-  board_datetime_picker: 2.1.0
+  board_datetime_picker: ^2.8.5
   # # https://pub.dev/packages/json
   # json: ^0.20.2
-  # https://pub-web.flutter-io.cn/packages/window_manager
-  window_manager: ^0.4.0
+  # https://pub.dev/packages/window_manager
+  window_manager: ^0.5.1
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +72,9 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+  # https://pub.dev/packages/hive_ce_generator
+  hive_ce_generator: any
+  build_runner: any
 
 # The following section is specific to Flutter packages.
 flutter:
