@@ -90,7 +90,8 @@ flutter:
   #   - images/a_dot_ham.jpeg
       # - assets/src/卦/
       # - assets/src/重卦/
-      - assets/meihua.db
+      - assets/_8gua_.json
+      - assets/_64gua_.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
