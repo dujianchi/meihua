@@ -67,12 +67,12 @@ class DbHelper {
     return exists != null;
   }
 
-  static Future<void> delete(String table,
-      [bool Function(Base data)? test]) async {
+  static Future<void> delete(
+      String table, bool Function(Base data) test) async {
     final box = _databaseByName(table);
-    final waitDeletes = box?.values.where((e) => test?.call(e) == true);
-    if (waitDeletes?.isNotEmpty == true) {
-      box?.delete(waitDeletes!.map((d) => d.id).toList());
+    final waitDeletes = box?.values.where(test);
+    if (waitDeletes.isNoneEmpty) {
+      box?.deleteAll(waitDeletes!.map((d) => d.id).toList());
     }
   }
 
