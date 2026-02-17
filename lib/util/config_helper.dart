@@ -10,7 +10,7 @@ class ConfigHelper {
             (ls) => ls?.firstWhere((t) => t.toMap()['key'] == key).toList))
         ?.toList();
     final conf = configs?.firstOrNull;
-    return conf == null ? null : (DbConfig()..fromMap(conf.toMap()));
+    return conf == null ? DbConfig() : (DbConfig()..fromMap(conf.toMap()));
   }
 
   static Future<String?> getConfig(String key) async {
@@ -20,14 +20,17 @@ class ConfigHelper {
 
   static Future<void> saveConfig(String key, String? val) async {
     var conf = await _getConfig(key);
-    if (conf == null) {
+    if (conf == null || conf.key == null) {
       conf = DbConfig()
+        ..id = conf?.id
         ..key = key
         ..val = val;
       await DbHelper.save(conf);
     } else {
-      conf.val = val;
-      await DbHelper.update(conf);
+      conf
+        ..key = key
+        ..val = val;
+      await DbHelper.update(conf, 'key', conf.key);
     }
   }
 }
