@@ -111,8 +111,9 @@ class Db64gua extends Base {
     if (fullName?.isNotEmpty == true) {
       final db64guas = await DbHelper.query(
           Db64gua.nameDb,
-          (ls) =>
-              ls?.firstWhere((t) => t.toMap()['full_name'] == fullName).toList);
+          (ls) => ls
+              ?.firstWhereOrNull((t) => t.toMap()['full_name'] == fullName)
+              .toList);
       if (db64guas.isNoneEmpty) {
         return Db64gua()..fromMap(db64guas!.first.toMap());
       }
