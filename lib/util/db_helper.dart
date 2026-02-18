@@ -91,7 +91,7 @@ class DbHelper {
       String tableName, String columnName, dynamic value) async {
     final box = _databaseByName(tableName);
     final exists =
-        box?.values.firstWhere((e) => e.toMap()[columnName] == value);
+        box?.values.firstWhereOrNull((e) => e.toMap()[columnName] == value);
     return exists != null;
   }
 
@@ -108,8 +108,8 @@ class DbHelper {
       [String idName = 'id', dynamic idArg]) async {
     assert(idName.isNotBlank);
     final box = _database(data);
-    final first =
-        box?.values.firstWhere((d) => d.toMap()[idName] == (idArg ?? data.id));
+    final first = box?.values
+        .firstWhereOrNull((d) => d.toMap()[idName] == (idArg ?? data.id));
     if (first != null) {
       box?.put(first.id, data);
     }

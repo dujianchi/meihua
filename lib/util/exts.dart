@@ -168,9 +168,18 @@ extension DynamicExt on dynamic {
   }
 }
 
-extension IterableExt on Iterable? {
+extension IterableExt<E> on Iterable<E>? {
   bool get isNullOrEmpty => this == null || this!.isEmpty;
   bool get isNoneEmpty => !isNullOrEmpty;
+
+  E? firstWhereOrNull(bool Function(E element) test, {E Function()? orElse}) {
+    final this_ = this;
+    if (this_ == null || this_.isEmpty) return null;
+    for (E element in this_) {
+      if (test(element)) return element;
+    }
+    return orElse == null ? null : orElse();
+  }
 }
 
 extension BaseExt on Base? {
