@@ -189,7 +189,7 @@ class SyncHelper {
             ..createTime = DateTime.now().millisecondsSinceEpoch
             ..operate = 1
             ..uploaded = 0
-            ..data = dh.toJson();
+            ..data = dh.toMap().toJson();
           await DbHelper.save(dbHistorySync);
         }
         // 上传所有新构造的新增记录
