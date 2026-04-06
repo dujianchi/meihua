@@ -237,7 +237,7 @@ class _PanState extends State<_Pan> {
               ),
               desc = EditText(
                 label: '详细说明',
-                maxLines: 3,
+                maxLines: 7,
                 defaultStr: _descStr,
               );
           Get.generalDialog(
