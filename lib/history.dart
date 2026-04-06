@@ -74,6 +74,7 @@ class _HistoryState extends State<History> {
                 xia: item.xia! == 0 ? 8 : item.xia!,
                 dong: item.bian! == 0 ? 6 : item.bian!,
                 historyDate: '${item.saveDate.dateStr()}\n(${item.lunarDate})',
+                historyId: item.id,
               ),
             );
           },

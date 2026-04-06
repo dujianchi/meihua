@@ -36,7 +36,7 @@ class _Pan extends StatefulWidget {
 }
 
 class _PanState extends State<_Pan> {
-  final dhitory = DbHistory();
+  var dhitory = DbHistory();
   ChongGua? _chongGua;
   String? _titleStr, _descStr;
   TextSpan? _middleString, _bottomString;
@@ -73,6 +73,26 @@ class _PanState extends State<_Pan> {
     setState(() {
       _chongGua = chongGua;
     });
+  }
+
+  void _updateTitleDesc() async {
+    final historyId = widget.yi?.historyId;
+    if (historyId != null) {
+      final savedHistory = (await DbHelper.query(dhitory.dbName,
+              (ls) => ls?.where((t) => t.toMap()['id'] == historyId)))
+          ?.firstOrNull as DbHistory?;
+      if (savedHistory != null) {
+        dhitory = savedHistory;
+        _titleStr = savedHistory.title;
+        _descStr = savedHistory.describe;
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    _updateTitleDesc();
+    super.initState();
   }
 
   @override
@@ -184,18 +204,15 @@ class _PanState extends State<_Pan> {
         ),
       );
     }
-    final actions = widget.yi?.historyDate?.isNotEmpty == true
-        ? <Widget>[]
-        : [
-            // PopupMenuButton(
-            //   itemBuilder: (context) => [
-            //     const PopupMenuItem(value: 0, child: Text('保存')),
-            //   ],
-            //   onSelected: (value) => _actionSelected(value),
-            // )
-            TextButton(
-                onPressed: () => _actionSelected(0), child: const Text('保存'))
-          ];
+    final actions = [
+      // PopupMenuButton(
+      //   itemBuilder: (context) => [
+      //     const PopupMenuItem(value: 0, child: Text('保存')),
+      //   ],
+      //   onSelected: (value) => _actionSelected(value),
+      // )
+      TextButton(onPressed: () => _actionSelected(0), child: const Text('保存'))
+    ];
     return Scaffold(
       appBar: AppBar(
         title: const Text('梅花易数盘'),
@@ -275,12 +292,12 @@ class _PanState extends State<_Pan> {
   }
 
   Future<void> _saveHistory() async {
-    dhitory.shang = widget.yi?.shang;
-    dhitory.xia = widget.yi?.xia;
-    dhitory.bian = widget.yi?.dong;
+    dhitory.shang ??= widget.yi?.shang;
+    dhitory.xia ??= widget.yi?.xia;
+    dhitory.bian ??= widget.yi?.dong;
     dhitory.title = _titleStr!;
-    dhitory.saveDate = widget.now.millisecondsSinceEpoch;
-    dhitory.lunarDate = widget.now.toLunar().niceStr();
+    dhitory.saveDate ??= widget.now.millisecondsSinceEpoch;
+    dhitory.lunarDate ??= widget.now.toLunar().niceStr();
     dhitory.describe = _descStr;
     await DbHelper.save(dhitory);
 

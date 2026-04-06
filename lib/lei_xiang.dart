@@ -37,9 +37,9 @@ class _StateLeiXiang extends State<LeiXiang> {
                 child: TextField(
                   controller: _ctrl,
                   textInputAction: TextInputAction.search,
-                  onSubmitted: (value) {
+                  onSubmitted: (value) async {
                     value.log();
-                    _loadData(value);
+                    await _loadData(value.trim());
                   },
                   decoration: const InputDecoration(hintText: '搜索关键字'),
                 ),
@@ -79,7 +79,7 @@ ${gua8.leiXiang}''';
     );
   }
 
-  void _loadData(String? keyword) async {
+  Future<void> _loadData(String? keyword) async {
     _keyword = keyword;
     final List<Map<String, dynamic>>? list;
     if (keyword.isNotBlank) {
@@ -101,8 +101,10 @@ ${gua8.leiXiang}''';
           ?.map((t) => t.toMap())
           .toList();
     }
-    _bagua.clear();
-    _bagua.addAll(list?.map((m) => Db8gua()..fromMap(m)) ?? []);
-    setState(() {});
+    'list.length = ${list?.length}'.log();
+    setState(() {
+      _bagua.clear();
+      _bagua.addAll(list?.map((m) => Db8gua()..fromMap(m)) ?? []);
+    });
   }
 }
