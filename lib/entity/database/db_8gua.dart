@@ -72,12 +72,10 @@ $shuLei
 
   static Future<Db8gua?> fromName(String? name) async {
     if (name?.isNotEmpty == true) {
-      final db8guas = await DbHelper.query(
-          Db8gua.nameDb,
-          (ls) =>
-              ls?.firstWhereOrNull((t) => t.toMap()['name'] == name).toList);
+      final db8guas = await DbHelper.query<Db8gua>(
+          Db8gua.nameDb, (ls) => ls?.where((t) => t.name == name));
       if (db8guas.isNullOrEmpty) return null;
-      return Db8gua()..fromMap(db8guas!.first.toMap());
+      return db8guas!.first;
     }
     return null;
   }

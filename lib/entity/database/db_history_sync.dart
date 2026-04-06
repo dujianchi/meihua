@@ -37,8 +37,9 @@ class DbHistorySync extends Base {
   }
 
   static Future<List<DbHistorySync>> query(
-      Iterable<Base>? Function(Iterable<Base>? list) filter) async {
-    final list = await DbHelper.query(nameDb, filter);
-    return list?.map((m) => DbHistorySync()..fromMap(m.toMap())).toList() ?? [];
+      Iterable<DbHistorySync>? Function(Iterable<DbHistorySync>? list)
+          filter) async {
+    final list = await DbHelper.query<DbHistorySync>(nameDb, filter);
+    return list?.toList() ?? [];
   }
 }

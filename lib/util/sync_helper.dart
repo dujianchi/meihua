@@ -91,7 +91,7 @@ class SyncHelper {
     await client?.mkdirAll(path);
   }
 
-  static sync() async {
+  static Future<void> sync() async {
     const dir = '/meihua',
         lock = '$dir/lock',
         json = '$dir/sync.json',
@@ -183,8 +183,7 @@ class SyncHelper {
         await DbHelper.save(dbHistorySyncDelAll);
         // 查询本地所有记录，构造新增记录
         final localList =
-            (await DbHelper.query(DbHistory.nameDb, (ls) => ls))?.toList() ??
-                [];
+            (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [];
         for (var dh in localList) {
           final dbHistorySync = DbHistorySync()
             ..createTime = DateTime.now().millisecondsSinceEpoch
@@ -194,8 +193,9 @@ class SyncHelper {
           await DbHelper.save(dbHistorySync);
         }
         // 上传所有新构造的新增记录
-        final syncList = await DbHelper.query(DbHistorySync.nameDb, (ls) => ls);
-        await _write(json, syncList.toJson());
+        final syncList =
+            await DbHelper.query<DbHistorySync>(DbHistorySync.nameDb);
+        await _write(json, syncList?.map((hs) => hs.toMap()).toList().toJson());
       }
       '同步完成'.toast();
     } catch (ex) {
