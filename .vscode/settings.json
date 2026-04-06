@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "C:/B/flutterProjects/meihua/windows"
+    "cmake.sourceDirectory": "C:/B/flutterProjects/meihua/windows",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

@@ -11,15 +11,13 @@ android {
     ndkVersion = flutter.ndkVersion
 
     signingConfigs {
-        release {
+        create("release") {
             //需要重新配置插件的签名文件
-            storeFile file('../yi.jks')
-            storePassword 'meihuayishu'
-            keyAlias '易'
-            keyPassword 'meihuayishu'
+            storeFile = file("../yi.jks")
+            storePassword = "meihuayishu"
+            keyAlias = "易"
+            keyPassword = "meihuayishu"
 
-            v1SigningEnabled true
-            v2SigningEnabled true
         }
     }
 
@@ -48,10 +46,10 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             // signingConfig = signingConfigs.getByName("debug")
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
