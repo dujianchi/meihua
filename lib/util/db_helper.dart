@@ -115,10 +115,15 @@ class DbHelper {
     }
   }
 
-  static Future<Iterable<Base>?> query(String table,
-      Iterable<Base>? Function(Iterable<Base>? list) filter) async {
+  static Future<Iterable<T>?> query<T extends Base>(String table,
+      [Iterable<T>? Function(Iterable<T>? list)? filter]) async {
     final box = _databaseByName(table);
-    if (box?.isNotEmpty != true) return filter(<Base>[]);
-    return filter(box!.values.toList());
+    if (filter != null) {
+      if (box?.isNotEmpty != true) return filter([]);
+      return filter(box!.values.toList() as List<T>);
+    } else {
+      if (box?.isNotEmpty != true) return [];
+      return box!.values.toList() as List<T>;
+    }
   }
 }

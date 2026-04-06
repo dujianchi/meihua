@@ -109,13 +109,10 @@ class Db64gua extends Base {
 
   static Future<Db64gua?> fromFullname(String? fullName) async {
     if (fullName?.isNotEmpty == true) {
-      final db64guas = await DbHelper.query(
-          Db64gua.nameDb,
-          (ls) => ls
-              ?.firstWhereOrNull((t) => t.toMap()['full_name'] == fullName)
-              .toList);
+      final db64guas = await DbHelper.query<Db64gua>(
+          Db64gua.nameDb, (ls) => ls?.where((t) => t.fullName == fullName));
       if (db64guas.isNoneEmpty) {
-        return Db64gua()..fromMap(db64guas!.first.toMap());
+        return db64guas!.first;
       }
     }
     return null;

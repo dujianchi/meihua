@@ -152,7 +152,7 @@ class _HistoryState extends State<History> {
       if (configured) {
         '确认同步'.confirmDialog(() async {
           await SyncHelper.sync();
-          _loadData();
+          await _loadData();
         }, title: '确认同步吗？');
       } else {
         _actionSelected(2);
@@ -188,7 +188,7 @@ class _HistoryState extends State<History> {
                 onPressed: () async {
                   '覆盖同步'.confirmDialog(() async {
                     await SyncHelper.forceSync();
-                    _loadData();
+                    await _loadData();
                     Get.until((route) => Get.isDialogOpen != true);
                   }, title: '确定以本地数据覆盖云端数据吗？');
                 },
@@ -285,7 +285,7 @@ class _HistoryState extends State<History> {
 
                   Get.until((route) => Get.isDialogOpen != true);
                   '保存成功'.toast();
-                  _loadData();
+                  await _loadData();
                 }
               },
               child: const Text('保存')),
@@ -303,19 +303,18 @@ class _HistoryState extends State<History> {
     });
   }
 
-  void _loadData() async {
+  Future<void> _loadData() async {
     _historyList.clear();
-    final list = (await DbHelper.query(DbHistory.nameDb, (ls) => ls))?.toList()
-      ?..sort((a, b) => b
-          .toMap()['save_date']
-          .toString()
-          .toInt()
-          .compareTo(a.toMap()['save_date'].toString().toInt()));
+    final list =
+        (((await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [])
+            as List<DbHistory>?)
+          ?..sort((a, b) => b.saveDate?.compareTo(a.saveDate ?? 0) ?? 0);
     if (list.isNoneEmpty) {
       setState(() {
-        _historyList
-            .addAll(list!.map((m) => DbHistory()..fromMap(m.toMap())).toList());
+        _historyList.addAll(list!);
       });
+    } else {
+      setState(() {});
     }
   }
 }

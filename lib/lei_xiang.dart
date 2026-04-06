@@ -81,30 +81,27 @@ ${gua8.leiXiang}''';
 
   Future<void> _loadData(String? keyword) async {
     _keyword = keyword;
-    final List<Map<String, dynamic>>? list;
+    final List<Db8gua>? list;
     if (keyword.isNotBlank) {
-      list = (await DbHelper.query(
+      list = (await DbHelper.query<Db8gua>(
               Db8gua.nameDb,
               (ls) => ls?.where((t) {
-                    final json = t.toMap();
-                    final shuLei = json['shu_lei']?.toString() ?? '';
-                    final leiXiang = json['lei_xiang']?.toString() ?? '';
-                    final name = json['name']?.toString() ?? '';
+                    final shuLei = t.shuLei ?? '';
+                    final leiXiang = t.leiXiang ?? '';
+                    final name = t.name ?? '';
                     return shuLei.contains(keyword!) ||
                         leiXiang.contains(keyword) ||
                         name == keyword;
                   })))
-          ?.map((t) => t.toMap())
-          .toList();
+          ?.toList();
     } else {
-      list = (await DbHelper.query(Db8gua.nameDb, (ls) => ls))
-          ?.map((t) => t.toMap())
-          .toList();
+      list =
+          (await DbHelper.query<Db8gua>(Db8gua.nameDb, (ls) => ls))?.toList();
     }
     'list.length = ${list?.length}'.log();
     setState(() {
       _bagua.clear();
-      _bagua.addAll(list?.map((m) => Db8gua()..fromMap(m)) ?? []);
+      _bagua.addAll(list ?? []);
     });
   }
 }

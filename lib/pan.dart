@@ -78,9 +78,9 @@ class _PanState extends State<_Pan> {
   void _updateTitleDesc() async {
     final historyId = widget.yi?.historyId;
     if (historyId != null) {
-      final savedHistory = (await DbHelper.query(dhitory.dbName,
-              (ls) => ls?.where((t) => t.toMap()['id'] == historyId)))
-          ?.firstOrNull as DbHistory?;
+      final savedHistory = (await DbHelper.query<DbHistory>(
+              dhitory.dbName, (ls) => ls?.where((t) => t.id == historyId)))
+          ?.firstOrNull;
       if (savedHistory != null) {
         dhitory = savedHistory;
         _titleStr = savedHistory.title;
@@ -309,9 +309,9 @@ class _PanState extends State<_Pan> {
     await DbHelper.save(dbHistorySync);
 
     if (dhitory.id == null) {
-      final saved = await DbHelper.query(dhitory.dbName,
-          (ls) => ls?.where((t) => t.toMap()['sync_hash'] == dhitory.syncHash));
-      final id = saved?.firstOrNull?.toMap()['id']?.toString().toInt(-1);
+      final saved = await DbHelper.query<DbHistory>(dhitory.dbName,
+          (ls) => ls?.where((t) => t.syncHash == dhitory.syncHash));
+      final id = saved?.firstOrNull?.id?.toString().toInt(-1);
       if (id != null && id > 0) {
         dhitory.id = id;
       }

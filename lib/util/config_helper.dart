@@ -6,13 +6,11 @@ import 'package:meihua/util/exts.dart';
 class ConfigHelper {
   static Future<DbConfig?> _getConfig(String key) async {
     if (key.isBlank) return null;
-    final configs = (await DbHelper.query(
-            DbConfig.nameDb,
-            (ls) =>
-                ls?.firstWhereOrNull((t) => t.toMap()['key'] == key).toList))
+    final configs = (await DbHelper.query<DbConfig>(
+            DbConfig.nameDb, (ls) => ls?.where((t) => t.key == key)))
         ?.toList();
     final conf = configs?.firstOrNull;
-    return conf == null ? DbConfig() : (DbConfig()..fromMap(conf.toMap()));
+    return conf ?? DbConfig();
   }
 
   static Future<String?> getConfig(String key) async {
