@@ -91,14 +91,16 @@ class SyncHelper {
     await client?.mkdirAll(path);
   }
 
-  static Future<void> sync() async {
-    const dir = '/meihua', lock = '$dir/lock', json = '$dir/sync.json',
+  static Future<void> sync([bool toast = true]) async {
+    const dir = '/meihua',
+        lock = '$dir/lock',
+        json = '$dir/sync.json',
         days = 24 * 60 * 60 * 1000;
     var acquired = false;
     try {
       // 先确认 WebDAV 可达,否则下面的读返回空、写是空操作,却会误报"同步完成"
       if (await _getSyncClient() == null) {
-        '同步失败：无法连接 WebDAV'.toast();
+        if (toast) '同步失败：无法连接 WebDAV'.toast();
         return;
       }
       await _createDir(dir);
@@ -122,14 +124,14 @@ class SyncHelper {
         await _applyToLocal(merged, localList);
         // 整份快照写回远端
         await _write(json, merged.map((h) => h.toMap()).toList().toJson());
-        '同步完成'.toast();
+        if (toast) '同步完成'.toast();
       } else {
         // 锁仍有效:别的设备(或上次崩溃的同步)持有,本次跳过,不能报"完成"
         '同步跳过：另一设备正在同步,请稍后再试'.toast(5);
       }
     } catch (ex) {
       ex.log('sync error: $ex');
-      '同步失败：$ex'.toast();
+      if (toast) '同步失败：$ex'.toast();
     } finally {
       // 只清自己抢到的锁,别把别的设备持有的锁误清掉
       if (acquired) {
@@ -140,7 +142,9 @@ class SyncHelper {
 
   static forceSync() async {
     // 本地整份快照直接覆盖远端(状态快照模型下不再需要"全删"指令)
-    const dir = '/meihua', lock = '$dir/lock', json = '$dir/sync.json',
+    const dir = '/meihua',
+        lock = '$dir/lock',
+        json = '$dir/sync.json',
         days = 24 * 60 * 60 * 1000;
     var acquired = false;
     try {
@@ -173,6 +177,25 @@ class SyncHelper {
   }
 
   // ---- 状态快照合并工具 ----
+
+  static Timer? _autoSyncTimer;
+
+  /// 安排一次延迟自动同步(默认 2 秒后)。连续调用会重置计时,把快速连续的
+  /// 增删改合并成一次同步。仅在已配置 WebDAV 时实际执行;同步在后台进行,
+  /// 不阻塞 UI。本地数据已即时落盘,同步只负责推到远端,所以 UI 始终是新的。
+  static Future<void> scheduleAutoSync(
+      [Duration delay = const Duration(seconds: 2)]) async {
+    if (!await isConfigured()) return;
+    _autoSyncTimer?.cancel();
+    _autoSyncTimer = Timer(delay, () async {
+      _autoSyncTimer = null;
+      try {
+        await sync(false);
+      } catch (ex) {
+        ex.log('auto sync error: ');
+      }
+    });
+  }
 
   /// 修复历史遗留:旧版本落盘时 syncHash 可能为 null,补算并刷新 updateTime,
   /// 使其能正常参与快照合并(否则会被 _mergeSnapshots 跳过,导致漏推/重复)。
@@ -255,9 +278,7 @@ class SyncHelper {
 
   /// 回放旧操作日志(1=增 2=删 3=改)得到最终态快照,用于一次性迁移
   static List<DbHistory> _replayOldLog(List<Map<String, dynamic>> arr) {
-    final logs = arr
-        .map((m) => DbHistorySync()..fromMap(m))
-        .toList()
+    final logs = arr.map((m) => DbHistorySync()..fromMap(m)).toList()
       ..sort((a, b) => (a.createTime ?? 0).compareTo(b.createTime ?? 0));
     final byHash = <String, DbHistory>{};
     for (final hs in logs) {
