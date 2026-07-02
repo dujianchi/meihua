@@ -272,6 +272,7 @@ class _HistoryState extends State<History> {
                   final descStr = desc.text();
                   item.title = titleStr;
                   item.describe = descStr;
+                  item.ensureSyncHash();
                   await DbHelper.update(item);
 
                   final dbHistorySync = DbHistorySync()

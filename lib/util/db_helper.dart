@@ -111,7 +111,10 @@ class DbHelper {
     final first = box?.values
         .firstWhereOrNull((d) => d.toMap()[idName] == (idArg ?? data.id));
     if (first != null) {
-      box?.put(first.id, data);
+      // 按 idName/idArg 命中的可能是从快照重建的对象(id 为 null),
+      // 写回前要保留原记录的 id,否则落盘后 id 丢失、后续按 id 查不到。
+      data.id = first.id;
+      await box?.put(first.id, data);
     }
   }
 

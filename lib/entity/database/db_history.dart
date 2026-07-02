@@ -27,6 +27,7 @@ class DbHistory extends Base {
 
   @override
   Map<String, dynamic> toMap() {
+    ensureSyncHash();
     final map = <String, dynamic>{};
     map['id'] = id;
     map['save_date'] = saveDate;
@@ -36,11 +37,27 @@ class DbHistory extends Base {
     map['bian'] = bian;
     map['title'] = title;
     map['describe'] = describe;
-    if (syncHash?.isNotEmpty != true) {
-      syncHash = map.toString().md5();
-    }
     map['sync_hash'] = syncHash;
     return map;
+  }
+
+  /// 计算并固化 syncHash(仅首次为空时计算,之后不再随内容变化),
+  /// 用作跨设备同步的身份键。必须在落盘前调用,否则磁盘上会存 null,
+  /// 重启后被 toMap 用已编辑的内容重算 → 与云端 op1 里的 hash 对不上,
+  /// 导致同步时按 syncHash 找不到记录、编辑回放失效。
+  void ensureSyncHash() {
+    if (syncHash?.isNotEmpty != true) {
+      final map = <String, dynamic>{};
+      map['id'] = id;
+      map['save_date'] = saveDate;
+      map['lunar_date'] = lunarDate;
+      map['shang'] = shang;
+      map['xia'] = xia;
+      map['bian'] = bian;
+      map['title'] = title;
+      map['describe'] = describe;
+      syncHash = map.toString().md5();
+    }
   }
 
   DbHistory fill() {

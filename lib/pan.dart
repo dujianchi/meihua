@@ -299,6 +299,7 @@ class _PanState extends State<_Pan> {
     dhitory.saveDate ??= widget.now.millisecondsSinceEpoch;
     dhitory.lunarDate ??= widget.now.toLunar().niceStr();
     dhitory.describe = _descStr;
+    dhitory.ensureSyncHash();
     await DbHelper.save(dhitory);
 
     final dbHistorySync = DbHistorySync()
@@ -321,6 +322,7 @@ class _PanState extends State<_Pan> {
   Future<void> _updateHistory() async {
     dhitory.title = _titleStr!;
     dhitory.describe = _descStr;
+    dhitory.ensureSyncHash();
     await DbHelper.update(dhitory);
 
     final dbHistorySync = DbHistorySync()

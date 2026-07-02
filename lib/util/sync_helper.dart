@@ -130,7 +130,9 @@ class SyncHelper {
                 !await DbHelper.exists(dh.dbName, 'sync_hash', dh.syncHash)) {
               await DbHelper.save(dh);
             } else {
-              await DbHelper.update(dh, 'sync_hash');
+              // 显式传 syncHash 作为匹配值,否则 update 第三参 idArg 为 null,
+              // 会退化成 sync_hash == dh.id(已置空),永远匹配不到,编辑回放变空操作。
+              await DbHelper.update(dh, 'sync_hash', dh.syncHash);
             }
           } else if (hs.operate == 2) {
             if (hs.whereArgs.isNotBlank && hs.whereParam.isNotBlank) {
