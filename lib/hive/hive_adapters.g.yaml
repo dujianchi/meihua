@@ -81,7 +81,7 @@ types:
         index: 2
   DbHistory:
     typeId: 3
-    nextIndex: 9
+    nextIndex: 11
     fields:
       id:
         index: 0
@@ -101,6 +101,10 @@ types:
         index: 7
       syncHash:
         index: 8
+      updateTime:
+        index: 9
+      deleted:
+        index: 10
   DbHistorySync:
     typeId: 4
     nextIndex: 7

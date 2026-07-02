@@ -10,6 +10,10 @@ class DbHistory extends Base {
   @override
   int? id;
   int? saveDate, shang, xia, bian;
+  /// 最近一次修改时间(毫秒),用作同步 last-write-wins 的版本号
+  int? updateTime;
+  /// 软删标记:0/空=正常,1=已删除(列表不展示,但快照里保留以传播删除)
+  int? deleted;
   String? lunarDate, title, describe, syncHash;
 
   @override
@@ -23,6 +27,8 @@ class DbHistory extends Base {
     title = map['title'];
     describe = map['describe'];
     syncHash = map['sync_hash'];
+    updateTime = map['update_time'];
+    deleted = map['deleted'];
   }
 
   @override
@@ -38,6 +44,8 @@ class DbHistory extends Base {
     map['title'] = title;
     map['describe'] = describe;
     map['sync_hash'] = syncHash;
+    map['update_time'] = updateTime;
+    map['deleted'] = deleted;
     return map;
   }
 
@@ -67,6 +75,12 @@ class DbHistory extends Base {
       final lunar = now.toLunar();
       lunarDate = lunar.niceStr();
     }
+    updateTime ??= now.millisecondsSinceEpoch;
     return this;
+  }
+
+  /// 刷新修改时间,标记本条为最新版本(同步时用于 last-write-wins)
+  void touch() {
+    updateTime = DateTime.now().millisecondsSinceEpoch;
   }
 }
