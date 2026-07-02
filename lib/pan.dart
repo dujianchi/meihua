@@ -7,6 +7,7 @@ import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/util/sync_helper.dart';
+import 'package:meihua/ai_prompt.dart';
 import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/ti_yong.dart';
@@ -205,13 +206,14 @@ class _PanState extends State<_Pan> {
       );
     }
     final actions = [
-      // PopupMenuButton(
-      //   itemBuilder: (context) => [
-      //     const PopupMenuItem(value: 0, child: Text('保存')),
-      //   ],
-      //   onSelected: (value) => _actionSelected(value),
-      // )
-      TextButton(onPressed: () => _actionSelected(0), child: const Text('保存'))
+      PopupMenuButton(
+        itemBuilder: (context) => const [
+          PopupMenuItem(value: 0, child: Text('保存')),
+          PopupMenuItem(value: 1, child: Text('删除')),
+          PopupMenuItem(value: 2, child: Text('ai提示词')),
+        ],
+        onSelected: (value) => _actionSelected(value),
+      )
     ];
     return Scaffold(
       appBar: AppBar(
@@ -265,6 +267,83 @@ class _PanState extends State<_Pan> {
                       _saveOrUpdate();
                     },
                     child: const Text('保存')),
+              ],
+              scrollable: true,
+            ),
+          );
+        }
+        break;
+      case 1:
+        // 删除：参考 history.dart 的软删逻辑
+        final yi = widget.yi;
+        final historyId = yi?.historyId;
+        if (historyId == null) {
+          '当前无历史记录可删除'.toast();
+        } else {
+          final title = _titleStr?.isNotEmpty == true ? _titleStr! : '此记录';
+          Get.generalDialog(
+            pageBuilder: (context, animation1, animation2) => AlertDialog(
+              title: Text('确定删除$title吗'),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      Get.until((route) => Get.isDialogOpen != true);
+                    },
+                    child: const Text('取消')),
+                TextButton(
+                    onPressed: () async {
+                      dhitory.deleted = 1;
+                      dhitory.touch();
+                      await DbHelper.update(dhitory);
+                      // 先关掉确认弹窗,再弹出 pan 页(直到当前路由不是 pan)
+                      Get.until((route) => Get.isDialogOpen != true);
+                      Get.until((route) => route.settings.name != 'pan');
+                      '删除成功'.toast();
+                      SyncHelper.scheduleAutoSync();
+                    },
+                    child: const Text('确定')),
+              ],
+            ),
+          );
+        }
+        break;
+      case 2:
+        // ai提示词：弹出输入框问"问的是什么"，跳转到提示词展示页
+        final yi = widget.yi;
+        if (yi == null) {
+          '数据为空'.toast();
+        } else {
+          final question = EditText(
+            label: '问的是什么',
+            maxLines: 3,
+            defaultStr: _titleStr,
+          );
+          Get.generalDialog(
+            pageBuilder: (context, animation1, animation2) => AlertDialog(
+              title: const Text('ai提示词'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [question],
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      Get.until((route) => Get.isDialogOpen != true);
+                    },
+                    child: const Text('取消')),
+                TextButton(
+                    onPressed: () {
+                      final q = question.text();
+                      Get.until((route) => Get.isDialogOpen != true);
+                      final prompt = buildAiPrompt(
+                        shang: yi.shang,
+                        xia: yi.xia,
+                        dong: yi.dong,
+                        question: q,
+                      );
+                      Get.to(() => AiPromptPage(prompt: prompt));
+                    },
+                    child: const Text('生成')),
               ],
               scrollable: true,
             ),
