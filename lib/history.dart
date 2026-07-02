@@ -65,8 +65,8 @@ class _HistoryState extends State<History> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: contentChildren,
           ),
-          onTap: () {
-            Get.toNamed(
+          onTap: () async {
+            await Get.toNamed(
               'pan',
               arguments: Yi(
                 shang: item.shang! == 0 ? 8 : item.shang!,
@@ -76,6 +76,8 @@ class _HistoryState extends State<History> {
                 historyId: item.id,
               ),
             );
+            // 从排盘页返回后刷新列表,反映在详细页做的编辑/保存
+            _loadData();
           },
           onLongPress: () {
             final hideText = (_visibles[index] ?? false) ? '隐藏' : '显示';
@@ -228,6 +230,7 @@ class _HistoryState extends State<History> {
       });
       Get.until((route) => Get.isDialogOpen != true);
       '删除成功'.toast();
+      SyncHelper.scheduleAutoSync();
     }, title: '确定删除${item.title}吗');
   }
 
@@ -274,6 +277,7 @@ class _HistoryState extends State<History> {
                   Get.until((route) => Get.isDialogOpen != true);
                   '保存成功'.toast();
                   await _loadData();
+                  SyncHelper.scheduleAutoSync();
                 }
               },
               child: const Text('保存')),

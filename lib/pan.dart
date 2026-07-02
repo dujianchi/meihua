@@ -6,6 +6,7 @@ import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
+import 'package:meihua/util/sync_helper.dart';
 import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/edit_text.dart';
 import 'package:meihua/widget/ti_yong.dart';
@@ -310,6 +311,7 @@ class _PanState extends State<_Pan> {
         dhitory.id = id;
       }
     }
+    SyncHelper.scheduleAutoSync();
   }
 
   Future<void> _updateHistory() async {
@@ -318,5 +320,6 @@ class _PanState extends State<_Pan> {
     dhitory.ensureSyncHash();
     dhitory.touch();
     await DbHelper.update(dhitory);
+    SyncHelper.scheduleAutoSync();
   }
 }
