@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/entity/database/db_8gua.dart';
-import 'package:meihua/entity/database/db_history_sync.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
@@ -300,14 +299,8 @@ class _PanState extends State<_Pan> {
     dhitory.lunarDate ??= widget.now.toLunar().niceStr();
     dhitory.describe = _descStr;
     dhitory.ensureSyncHash();
+    dhitory.touch();
     await DbHelper.save(dhitory);
-
-    final dbHistorySync = DbHistorySync()
-      ..createTime = DateTime.now().millisecondsSinceEpoch
-      ..operate = 1
-      ..uploaded = 0
-      ..data = dhitory.toMap().toJson();
-    await DbHelper.save(dbHistorySync);
 
     if (dhitory.id == null) {
       final saved = await DbHelper.query<DbHistory>(dhitory.dbName,
@@ -323,15 +316,7 @@ class _PanState extends State<_Pan> {
     dhitory.title = _titleStr!;
     dhitory.describe = _descStr;
     dhitory.ensureSyncHash();
+    dhitory.touch();
     await DbHelper.update(dhitory);
-
-    final dbHistorySync = DbHistorySync()
-      ..createTime = DateTime.now().millisecondsSinceEpoch
-      ..operate = 3
-      ..uploaded = 0
-      ..data = dhitory.toMap().toJson()
-      ..whereArgs = 'sync_hash'
-      ..whereParam = '${dhitory.syncHash}';
-    await DbHelper.save(dbHistorySync);
   }
 }

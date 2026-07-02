@@ -92,11 +92,15 @@ class SyncHelper {
   }
 
   static Future<void> sync() async {
-    const dir = '/meihua',
-        lock = '$dir/lock',
-        json = '$dir/sync.json',
+    const dir = '/meihua', lock = '$dir/lock', json = '$dir/sync.json',
         days = 24 * 60 * 60 * 1000;
+    var acquired = false;
     try {
+      // 先确认 WebDAV 可达,否则下面的读返回空、写是空操作,却会误报"同步完成"
+      if (await _getSyncClient() == null) {
+        '同步失败：无法连接 WebDAV'.toast();
+        return;
+      }
       await _createDir(dir);
       final lockStr = await _getContent(lock);
       // 判断锁是否有效，默认锁24小时
@@ -104,107 +108,172 @@ class SyncHelper {
           DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= days) {
         //将当前时间戳写入 lock 文件
         await _write(lock, '${DateTime.now().millisecondsSinceEpoch}');
-        // 读取 sync.json
-        final jsonStr = await _getContent(json);
-        final jsonArr =
-            jsonStr.isNotBlank ? jsonDecode(jsonStr) as List<dynamic> : [];
-        // 线上待同步的
-        final dbHistorySyncOnline =
-            jsonArr.map((m) => DbHistorySync()..fromMap(m)).toList();
-        // 本地所有的
-        final dbHistorySyncLocalList = await DbHistorySync.query((ls) => ls);
-        // 本地所有未上传的
-        final localToOnline =
-            dbHistorySyncLocalList.where((hs) => hs.uploaded == 0).toList();
-        // 本地未上传+线上的
-        dbHistorySyncOnline.addAll(localToOnline);
-        // 数据按时间排序
-        dbHistorySyncOnline
-            .sort((a, b) => a.createTime?.compareTo(b.createTime ?? 0) ?? 0);
-        // 按照 1=增 2=删 3=改 的逻辑处理数据
-        for (var hs in dbHistorySyncOnline) {
-          if (hs.operate == 1 || hs.operate == 3) {
-            final dh = DbHistory()..fromMap(hs.data.jsonToMap());
-            dh.id = null;
-            if (hs.operate == 1 &&
-                !await DbHelper.exists(dh.dbName, 'sync_hash', dh.syncHash)) {
-              await DbHelper.save(dh);
-            } else {
-              // 显式传 syncHash 作为匹配值,否则 update 第三参 idArg 为 null,
-              // 会退化成 sync_hash == dh.id(已置空),永远匹配不到,编辑回放变空操作。
-              await DbHelper.update(dh, 'sync_hash', dh.syncHash);
-            }
-          } else if (hs.operate == 2) {
-            if (hs.whereArgs.isNotBlank && hs.whereParam.isNotBlank) {
-              await DbHelper.delete(DbHistory.nameDb,
-                  (dhs) => dhs.toMap()[hs.whereArgs] == hs.whereParam);
-            } else {
-              await DbHelper.delete(DbHistory.nameDb, (dhs) => true);
-            }
-          }
-        }
-        await _write(json,
-            dbHistorySyncOnline.map((hs) => hs.toMap()).toList().toJson());
-        for (var hs in localToOnline) {
-          hs.uploaded = 1;
-          await DbHelper.update(hs);
-        }
+        acquired = true;
+        // 读远端快照(自动兼容旧操作日志格式,见 _readRemoteSnapshot)
+        final remoteList = await _readRemoteSnapshot(json);
+        // 本地全量快照
+        final localList =
+            (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [];
+        // 修复历史遗留:syncHash 为空的旧记录补算并刷新,否则快照合并会漏掉它们
+        await _normalizeLocal(localList);
+        // 按 syncHash 合并,update_time 新者胜(last-write-wins),平局墓碑胜
+        final merged = _mergeSnapshots(remoteList, localList);
+        // 落地本地(只更新比本地新的条目,新增远端独有的)
+        await _applyToLocal(merged, localList);
+        // 整份快照写回远端
+        await _write(json, merged.map((h) => h.toMap()).toList().toJson());
+        '同步完成'.toast();
+      } else {
+        // 锁仍有效:别的设备(或上次崩溃的同步)持有,本次跳过,不能报"完成"
+        '同步跳过：另一设备正在同步,请稍后再试'.toast(5);
       }
-      '同步完成'.toast();
     } catch (ex) {
       ex.log('sync error: $ex');
       '同步失败：$ex'.toast();
     } finally {
-      await _write(lock, '');
+      // 只清自己抢到的锁,别把别的设备持有的锁误清掉
+      if (acquired) {
+        await _write(lock, '');
+      }
     }
   }
 
   static forceSync() async {
-    // 本地覆盖同步，即代表本地历史所有数据要被删除，然后服务器上的数据也应该被清除
-    const dir = '/meihua',
-        lock = '$dir/lock',
-        json = '$dir/sync.json',
+    // 本地整份快照直接覆盖远端(状态快照模型下不再需要"全删"指令)
+    const dir = '/meihua', lock = '$dir/lock', json = '$dir/sync.json',
         days = 24 * 60 * 60 * 1000;
+    var acquired = false;
     try {
+      if (await _getSyncClient() == null) {
+        '同步失败：无法连接 WebDAV'.toast();
+        return;
+      }
       await _createDir(dir);
       final lockStr = await _getContent(lock);
-      // 判断锁是否有效，默认锁24小时
       if (lockStr.isBlank ||
           DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= days) {
-        //将当前时间戳写入 lock 文件
         await _write(lock, '${DateTime.now().millisecondsSinceEpoch}');
-        // 删除本地历史记录
-        await DbHelper.delete(DbHistorySync.nameDb, (ls) => true);
-        // 构造一个删除记录
-        final dbHistorySyncDelAll = DbHistorySync()
-          ..createTime = DateTime.now().millisecondsSinceEpoch
-          ..operate = 2
-          ..uploaded = 0
-          ..whereArgs = ''
-          ..whereParam = '';
-        await DbHelper.save(dbHistorySyncDelAll);
-        // 查询本地所有记录，构造新增记录
+        acquired = true;
         final localList =
             (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [];
-        for (var dh in localList) {
-          final dbHistorySync = DbHistorySync()
-            ..createTime = DateTime.now().millisecondsSinceEpoch
-            ..operate = 1
-            ..uploaded = 0
-            ..data = dh.toMap().toJson();
-          await DbHelper.save(dbHistorySync);
-        }
-        // 上传所有新构造的新增记录
-        final syncList =
-            await DbHelper.query<DbHistorySync>(DbHistorySync.nameDb);
-        await _write(json, syncList?.map((hs) => hs.toMap()).toList().toJson());
+        await _normalizeLocal(localList);
+        await _write(json, localList.map((h) => h.toMap()).toList().toJson());
+        '同步完成'.toast();
+      } else {
+        '同步跳过：另一设备正在同步,请稍后再试'.toast(5);
       }
-      '同步完成'.toast();
     } catch (ex) {
       ex.log('sync error: $ex');
       '同步失败：$ex'.toast();
     } finally {
-      await _write(lock, '');
+      if (acquired) {
+        await _write(lock, '');
+      }
     }
+  }
+
+  // ---- 状态快照合并工具 ----
+
+  /// 修复历史遗留:旧版本落盘时 syncHash 可能为 null,补算并刷新 updateTime,
+  /// 使其能正常参与快照合并(否则会被 _mergeSnapshots 跳过,导致漏推/重复)。
+  static Future<void> _normalizeLocal(List<DbHistory> localList) async {
+    for (final h in localList) {
+      if (h.syncHash == null || h.syncHash!.isEmpty) {
+        h.ensureSyncHash();
+        h.touch();
+        await DbHelper.save(h);
+      }
+    }
+  }
+
+  /// 记录的版本时间戳:优先 update_time,回退 save_date,再回退 0
+  static int _ts(DbHistory h) => h.updateTime ?? h.saveDate ?? 0;
+
+  /// candidate 是否应替换 prev:时间戳不同则新者胜;相同(同毫秒)时
+  /// 已删除(deleted=1)的版本胜出——删除是终止操作,应优先传播,
+  /// 否则一条刚删除的墓碑可能被同毫秒的旧版本压住、推不到远端。
+  static bool _shouldReplace(DbHistory candidate, DbHistory prev) {
+    final tc = _ts(candidate), tp = _ts(prev);
+    if (tc != tp) return tc > tp;
+    return candidate.deleted == 1 && prev.deleted != 1;
+  }
+
+  /// 按 syncHash 合并两端快照,相同 key 取 update_time 新者,平局墓碑胜
+  static List<DbHistory> _mergeSnapshots(
+      List<DbHistory> remote, List<DbHistory> local) {
+    final byHash = <String, DbHistory>{};
+    for (final h in [...remote, ...local]) {
+      final key = h.syncHash;
+      if (key == null || key.isEmpty) continue;
+      final prev = byHash[key];
+      if (prev == null || _shouldReplace(h, prev)) {
+        byHash[key] = h;
+      }
+    }
+    return byHash.values.toList();
+  }
+
+  /// 把合并结果落地到本地:新增远端独有的、用较新版本覆盖本地旧版本
+  static Future<void> _applyToLocal(
+      List<DbHistory> merged, List<DbHistory> local) async {
+    final localByHash = {for (var h in local) h.syncHash: h};
+    for (final m in merged) {
+      final key = m.syncHash;
+      if (key == null || key.isEmpty) continue;
+      final existing = localByHash[key];
+      if (existing == null) {
+        // 本地没有,新增(用本地新 id,丢弃远端 id)
+        final dh = DbHistory()..fromMap(m.toMap());
+        dh.id = null;
+        await DbHelper.save(dh);
+      } else if (_shouldReplace(m, existing)) {
+        // 合并版本比本地新(或同毫秒但为墓碑),覆盖本地(保留本地 id)
+        final dh = DbHistory()..fromMap(m.toMap());
+        dh.id = existing.id;
+        await DbHelper.save(dh);
+      }
+    }
+  }
+
+  /// 读远端 sync.json 并还原成 DbHistory 列表。
+  /// 兼容两种格式:
+  ///  - 新格式:List<DbHistory 快照 map>
+  ///  - 旧格式:List<DbHistorySync 操作日志>(含 'operate' 字段),回放一次转成快照
+  static Future<List<DbHistory>> _readRemoteSnapshot(String json) async {
+    final jsonStr = await _getContent(json);
+    if (jsonStr.isBlank) return [];
+    final arr = jsonDecode(jsonStr) as List<dynamic>;
+    if (arr.isEmpty) return [];
+    final first = arr.first;
+    if (first is Map && first.containsKey('operate')) {
+      return _replayOldLog(arr.cast<Map<String, dynamic>>());
+    }
+    return arr
+        .map((e) => DbHistory()..fromMap(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 回放旧操作日志(1=增 2=删 3=改)得到最终态快照,用于一次性迁移
+  static List<DbHistory> _replayOldLog(List<Map<String, dynamic>> arr) {
+    final logs = arr
+        .map((m) => DbHistorySync()..fromMap(m))
+        .toList()
+      ..sort((a, b) => (a.createTime ?? 0).compareTo(b.createTime ?? 0));
+    final byHash = <String, DbHistory>{};
+    for (final hs in logs) {
+      if (hs.operate == 1 || hs.operate == 3) {
+        final dh = DbHistory()..fromMap(hs.data?.jsonToMap() ?? const {});
+        if (dh.syncHash != null && dh.syncHash!.isNotEmpty) {
+          byHash[dh.syncHash!] = dh;
+        }
+      } else if (hs.operate == 2) {
+        if (hs.whereArgs.isNotBlank && hs.whereParam.isNotBlank) {
+          byHash.remove(hs.whereParam);
+        } else {
+          byHash.clear();
+        }
+      }
+    }
+    return byHash.values.toList();
   }
 }

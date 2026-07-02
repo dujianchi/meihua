@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
-import 'package:meihua/entity/database/db_history_sync.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/util/sync_helper.dart';
@@ -218,15 +217,11 @@ class _HistoryState extends State<History> {
   void _delete(DbHistory item, int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
     '删除'.confirmDialog(() async {
-      await DbHelper.delete(item.dbName, (t) => t.toMap()['id'] == item.id);
-
-      final dbHistorySync = DbHistorySync()
-        ..createTime = DateTime.now().millisecondsSinceEpoch
-        ..operate = 2
-        ..uploaded = 0
-        ..whereArgs = 'sync_hash'
-        ..whereParam = '${item.syncHash}';
-      await DbHelper.save(dbHistorySync);
+      // 软删:保留记录但标记 deleted=1 并刷新 updateTime,
+      // 同步时这条"已删除"快照会比远端旧版本新,从而把删除传播到其它设备
+      item.deleted = 1;
+      item.touch();
+      await DbHelper.update(item);
 
       setState(() {
         _historyList.removeAt(index);
@@ -273,16 +268,8 @@ class _HistoryState extends State<History> {
                   item.title = titleStr;
                   item.describe = descStr;
                   item.ensureSyncHash();
+                  item.touch();
                   await DbHelper.update(item);
-
-                  final dbHistorySync = DbHistorySync()
-                    ..createTime = DateTime.now().millisecondsSinceEpoch
-                    ..operate = 3
-                    ..uploaded = 0
-                    ..data = item.toMap().toJson()
-                    ..whereArgs = 'sync_hash'
-                    ..whereParam = '${item.syncHash}';
-                  await DbHelper.save(dbHistorySync);
 
                   Get.until((route) => Get.isDialogOpen != true);
                   '保存成功'.toast();
@@ -306,13 +293,15 @@ class _HistoryState extends State<History> {
 
   Future<void> _loadData() async {
     _historyList.clear();
-    final list =
-        (((await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [])
-            as List<DbHistory>?)
-          ?..sort((a, b) => b.saveDate?.compareTo(a.saveDate ?? 0) ?? 0);
-    if (list.isNoneEmpty) {
+    final raw =
+        (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ??
+            <DbHistory>[];
+    // 软删的记录不进列表(但仍留在 box 里以传播删除)
+    raw.removeWhere((h) => h.deleted == 1);
+    raw.sort((a, b) => b.saveDate?.compareTo(a.saveDate ?? 0) ?? 0);
+    if (raw.isNoneEmpty) {
       setState(() {
-        _historyList.addAll(list!);
+        _historyList.addAll(raw);
       });
     } else {
       setState(() {});

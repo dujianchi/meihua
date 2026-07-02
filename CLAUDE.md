@@ -51,16 +51,20 @@ Despite `doc/init.sql` and `meihua.db` being checked in (legacy schema reference
 
 - `Db8gua` / `Db64gua` — divination reference content, seeded from `assets/_8gua_.json` and `assets/_64gua_.json` on first run by `DbHelper.initDataIfNeed()`.
 - `DbConfig` — key/value config (WebDAV creds, etc.).
-- `DbHistory` — saved cast results.
-- `DbHistorySync` — sync journal: `operate` 1=增/2=删/3=改, `uploaded` 0/1, plus `whereArgs`/`whereParam`/`data` for replaying ops remotely. Records have a `syncHash` (md5) used for dedup.
+- `DbHistory` — saved cast results. Carries a `syncHash` (md5 identity key, computed once via `ensureSyncHash()` and stable across edits), `updateTime` (last-write-wins version for sync), and `deleted` (0/1 soft-delete tombstone that propagates via the snapshot). `touch()` refreshes `updateTime`.
+- `DbHistorySync` — **legacy**; the old operation-log journal (operate 1=增/2=删/3=改). No longer written by the app. Kept only so `SyncHelper._replayOldLog()` can migrate an old remote `sync.json` into the new snapshot format on first sync. Do not add new writes to it.
 
-`lib/util/db_helper.dart` — `DbHelper` is a singleton wrapping the open boxes. Generic `save/exists/delete/update/query` operate over `Base` by `dbName`. There is no SQL; "queries" are in-memory `box.values` scans (so tables stay small).
+`lib/util/db_helper.dart` — `DbHelper` is a singleton wrapping the open boxes. Generic `save/exists/delete/update/query` operate over `Base` by `dbName`. `update(data, idName, idArg)` matches by `toMap()[idName] == (idArg ?? data.id)` and preserves the matched record's id on overwrite (`data.id = first.id`) — important because sync passes in objects rebuilt from snapshots with null id. There is no SQL; "queries" are in-memory `box.values` scans (so tables stay small).
 `lib/util/config_helper.dart` — `getConfig`/`saveConfig` over `DbConfig`.
-Hive adapters are generated in `lib/hive/hive_adapters.dart` (`@GenerateAdapters`) → `hive_adapters.g.dart`; registered via `Hive.registerAdapters()` (from `hive_registrar.g.dart`) at startup.
+Hive adapters are generated in `lib/hive/hive_adapters.dart` (`@GenerateAdapters`) → `hive_adapters.g.dart`; registered via `Hive.registerAdapters()` (from `hive_registrar.g.dart`) at startup. Run `dart run build_runner build --delete-conflicting-outputs` after changing entity fields.
 
-### WebDAV sync (`lib/util/sync_helper.dart`)
-`SyncHelper.sync()` — cooperative merge: acquires a 24h lock file `/meihua/lock` on the WebDAV server, reads remote `/meihua/sync.json` (the `DbHistorySync` journal), merges with local un-uploaded entries (sorted by `createTime`), replays add/del/update against local `DbHistory`, writes back `sync.json`, marks local entries `uploaded=1`.
-`SyncHelper.forceSync()` — destructive: wipes local `DbHistorySync`, emits a single "delete-all" op plus fresh "add" ops for every existing `DbHistory` row, then overwrites remote `sync.json`. This is "local overwrites remote". The lock is always cleared in `finally`.
+### WebDAV sync (`lib/util/sync_helper.dart`) — state-snapshot model
+Remote `/meihua/sync.json` stores the **current state**: a `List<DbHistory>` snapshot (each entry carries `sync_hash` + `update_time`), not an operation log. There is no replay, no `operate`, no blanket "delete-all" record.
+
+`SyncHelper.sync()` — acquires a 24h lock `/meihua/lock` (only cleared in `finally` *if this run acquired it*, so a held lock isn't clobbered); reads remote snapshot via `_readRemoteSnapshot()` (auto-detects old op-log format by the `operate` key and one-shot migrates it through `_replayOldLog()`); `_normalizeLocal()` back-fills `syncHash` for legacy local records that were saved before the timing fix; `_mergeSnapshots()` unions remote+local by `syncHash` with last-write-wins by `update_time` (fallback `save_date`); `_applyToLocal()` upserts only entries newer than local (preserving local id); writes the merged snapshot back to remote.
+`SyncHelper.forceSync()` — "local overwrites remote": writes the local snapshot straight over `sync.json`. No delete-all, no journal. (Deletion now propagates as a soft-delete tombstone: `_delete` sets `deleted=1` + `touch()`, and `_loadData` filters `deleted==1` from the list while keeping the row in the box so the tombstone syncs.)
+
+Identity caveat: `syncHash` is content-based md5 (includes title/describe), stable only because `ensureSyncHash()` computes it once and never recomputes — so call `ensureSyncHash()` before any first persist. Two records with identical content at the same millisecond would collide; not handled.
 
 ### Content assets
 `assets/_8gua_.json`, `assets/_64gua_.json` are the source of truth for trigram/hexagram text, loaded once into Hive. `doc/` holds the raw scraped `.txt`/`.pdf` source material and `init.sql` (legacy) — editing the JSON assets, not the SQL, updates app content.
