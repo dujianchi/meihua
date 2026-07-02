@@ -1,0 +1,1 @@
+claude --enable-auto-mode
