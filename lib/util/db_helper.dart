@@ -77,7 +77,7 @@ class DbHelper {
     return null;
   }
 
-  static Future<void> save<T extends Base>(T data) async {
+  static Future<int?> save<T extends Base>(T data) async {
     final box = _database(data);
     if (data.id == null) {
       data.id = await box?.add(data);
@@ -85,6 +85,7 @@ class DbHelper {
     } else {
       await box?.put(data.id, data);
     }
+    return data.id;
   }
 
   static Future<bool> exists(
