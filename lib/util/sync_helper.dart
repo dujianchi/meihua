@@ -113,17 +113,25 @@ class SyncHelper {
         acquired = true;
         // 读远端快照(自动兼容旧操作日志格式,见 _readRemoteSnapshot)
         final remoteList = await _readRemoteSnapshot(json);
-        // 本地全量快照
-        final localList =
+        // 本地全量快照:立即克隆,避免持有 Hive frame 缓存的对象引用
+        // (Hive CE 的 frame 缓存与 box.values 返回同一批对象,就地修改
+        //  可能因 frame 内部反序列化/缓存淘汰导致字段被清空)
+        final rawList =
             (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [];
+        final localList =
+            rawList.map((h) => DbHistory()..fromMap(h.toMap())).toList();
         // 修复历史遗留:syncHash 为空的旧记录补算并刷新,否则快照合并会漏掉它们
         await _normalizeLocal(localList);
         // 按 syncHash 合并,update_time 新者胜(last-write-wins),平局墓碑胜
         final merged = _mergeSnapshots(remoteList, localList);
         // 落地本地(只更新比本地新的条目,新增远端独有的)
         await _applyToLocal(merged, localList);
-        // 整份快照写回远端
-        await _write(json, merged.map((h) => h.toMap()).toList().toJson());
+        // 整份快照写回远端(跳过关键字段为空的损坏记录)
+        final clean = merged
+            .map((h) => h.toMap())
+            .where((m) => m['sync_hash'] != null && m['save_date'] != null)
+            .toList();
+        await _write(json, clean.toJson());
         if (toast) '同步完成'.toast();
       } else {
         // 锁仍有效:别的设备(或上次崩溃的同步)持有,本次跳过,不能报"完成"
@@ -158,10 +166,17 @@ class SyncHelper {
           DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= days) {
         await _write(lock, '${DateTime.now().millisecondsSinceEpoch}');
         acquired = true;
-        final localList =
+        final rawList =
             (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [];
+        // 克隆后操作,避免 Hive frame 缓存引用问题
+        final localList =
+            rawList.map((h) => DbHistory()..fromMap(h.toMap())).toList();
         await _normalizeLocal(localList);
-        await _write(json, localList.map((h) => h.toMap()).toList().toJson());
+        final clean = localList
+            .map((h) => h.toMap())
+            .where((m) => m['sync_hash'] != null && m['save_date'] != null)
+            .toList();
+        await _write(json, clean.toJson());
         '同步完成'.toast();
       } else {
         '同步跳过：另一设备正在同步,请稍后再试'.toast(5);
@@ -222,6 +237,7 @@ class SyncHelper {
   }
 
   /// 按 syncHash 合并两端快照,相同 key 取 update_time 新者,平局墓碑胜
+  /// 返回克隆后的新对象,与入参列表完全独立,避免 Hive frame 缓存引用问题
   static List<DbHistory> _mergeSnapshots(
       List<DbHistory> remote, List<DbHistory> local) {
     final byHash = <String, DbHistory>{};
@@ -230,7 +246,8 @@ class SyncHelper {
       if (key == null || key.isEmpty) continue;
       final prev = byHash[key];
       if (prev == null || _shouldReplace(h, prev)) {
-        byHash[key] = h;
+        // 克隆后放入合并结果,断绝与 Hive frame / 远程临时对象的引用关系
+        byHash[key] = DbHistory()..fromMap(h.toMap());
       }
     }
     return byHash.values.toList();
