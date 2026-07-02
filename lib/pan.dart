@@ -276,7 +276,7 @@ class _PanState extends State<_Pan> {
       case 1:
         // 删除：参考 history.dart 的软删逻辑
         final yi = widget.yi;
-        final historyId = yi?.historyId;
+        final historyId = yi?.historyId ?? dhitory.id;
         if (historyId == null) {
           '当前无历史记录可删除'.toast();
         } else {
@@ -380,16 +380,8 @@ class _PanState extends State<_Pan> {
     dhitory.describe = _descStr;
     dhitory.ensureSyncHash();
     dhitory.touch();
-    await DbHelper.save(dhitory);
+    dhitory.id = await DbHelper.save(dhitory);
 
-    if (dhitory.id == null) {
-      final saved = await DbHelper.query<DbHistory>(dhitory.dbName,
-          (ls) => ls?.where((t) => t.syncHash == dhitory.syncHash));
-      final id = saved?.firstOrNull?.id?.toString().toInt(-1);
-      if (id != null && id > 0) {
-        dhitory.id = id;
-      }
-    }
     SyncHelper.scheduleAutoSync();
   }
 
