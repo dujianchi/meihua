@@ -127,12 +127,15 @@ class _HistoryState extends State<History> {
         actions: [
           PopupMenuButton(
             itemBuilder: (context) => [
-              PopupMenuItem(value: 0, child: Text(_showAll ? '隐藏全部' : '显示全部')),
+              //PopupMenuItem(value: 0, child: Text(_showAll ? '隐藏全部' : '显示全部')),
               const PopupMenuItem(value: 1, child: Text('同步')),
               const PopupMenuItem(value: 2, child: Text('同步设置')),
             ],
             onSelected: (value) => _actionSelected(value),
-          )
+          ),
+          TextButton(
+              onPressed: () => _actionSelected(0),
+              child: Text(_showAll ? '隐藏全部' : '显示全部')),
         ],
       ),
       body: SafeArea(
@@ -297,9 +300,8 @@ class _HistoryState extends State<History> {
 
   Future<void> _loadData() async {
     _historyList.clear();
-    final raw =
-        (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ??
-            <DbHistory>[];
+    final raw = (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ??
+        <DbHistory>[];
     // 软删的记录不进列表(但仍留在 box 里以传播删除)
     raw.removeWhere((h) => h.deleted == 1);
     raw.sort((a, b) => b.saveDate?.compareTo(a.saveDate ?? 0) ?? 0);

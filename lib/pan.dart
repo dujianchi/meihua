@@ -208,12 +208,12 @@ class _PanState extends State<_Pan> {
     final actions = [
       PopupMenuButton(
         itemBuilder: (context) => const [
-          PopupMenuItem(value: 0, child: Text('保存')),
           PopupMenuItem(value: 1, child: Text('删除')),
-          PopupMenuItem(value: 2, child: Text('ai提示词')),
+          PopupMenuItem(value: 2, child: Text('AI提示词')),
         ],
         onSelected: (value) => _actionSelected(value),
-      )
+      ),
+      TextButton(onPressed: () => _actionSelected(0), child: const Text('保存')),
     ];
     return Scaffold(
       appBar: AppBar(
@@ -314,7 +314,7 @@ class _PanState extends State<_Pan> {
           '数据为空'.toast();
         } else {
           final question = EditText(
-            label: '问的是什么',
+            label: '问事背景',
             maxLines: 3,
             defaultStr: _titleStr,
           );

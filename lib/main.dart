@@ -216,10 +216,12 @@ class MyApp extends StatelessWidget {
               itemBuilder: (context) => [
                 const PopupMenuItem(value: 0, child: Text('易经原文')),
                 const PopupMenuItem(value: 1, child: Text('八卦类象')),
-                const PopupMenuItem(value: 2, child: Text('排盘历史')),
+                //const PopupMenuItem(value: 2, child: Text('排盘历史')),
               ],
               onSelected: (value) => _actionSelected(value),
-            )
+            ),
+            TextButton(
+                onPressed: () => _actionSelected(2), child: const Text('排盘历史')),
           ],
         ),
         body: SafeArea(
