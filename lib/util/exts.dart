@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:get/utils.dart';
 import 'package:lunar/lunar.dart';
-import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/enum/ba_gua.dart';
 
 extension IntExt on int {

@@ -19,7 +19,9 @@ class DbHelper {
     Hive.box<DbHistorySync>(DbHistorySync.nameDb),
   );
 
+  // ignore: non_constant_identifier_names
   final Box<Db8gua> _8guaBox;
+  // ignore: non_constant_identifier_names
   final Box<Db64gua> _64guaBox;
   final Box<DbConfig> _configBox;
   final Box<DbHistory> _historyBox;
