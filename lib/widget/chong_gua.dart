@@ -25,19 +25,19 @@ class ChongGua extends StatelessWidget {
     } else if (hu) {
       // 乾坤无互，互其变卦
       if (huBian) {
-        final bianGua = _calcBian(shang, xia, bian!);
-        return _calcHu(bianGua.shang.value, bianGua.xia.value);
+        final bianGua = calcBian(shang, xia, bian!);
+        return calcHu(bianGua.shang.value, bianGua.xia.value);
       } else {
-        return _calcHu(shang, xia);
+        return calcHu(shang, xia);
       }
     } else if (bian != null) {
-      return _calcBian(shang, xia, bian!);
+      return calcBian(shang, xia, bian!);
     } else {
       return null;
     }
   }
 
-  Gua64 _calcBian(int shang, int xia, int bian) {
+  static Gua64 calcBian(int shang, int xia, int bian) {
     final bianFan = 7 - bian;
     final bianIndex = bianFan - 1;
     final bins = BaGua.fromValue(shang).bin + BaGua.fromValue(xia).bin;
@@ -53,7 +53,7 @@ class ChongGua extends StatelessWidget {
     return Gua64(shang: BaGua.fromBin(shang1), xia: BaGua.fromBin(xia1));
   }
 
-  Gua64 _calcHu(int shang, int xia) {
+  static Gua64 calcHu(int shang, int xia) {
     final bins = BaGua.fromValue(shang).bin + BaGua.fromValue(xia).bin;
     final shang1 = bins.substring(1, 4);
     final xia1 = bins.substring(2, 5);

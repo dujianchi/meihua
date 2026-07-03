@@ -43,7 +43,7 @@ extension IntExtNullable on int? {
   }
 
   String dateStr() {
-    return date()?.toString() ?? '';
+    return date()?.toString().subBefore('.') ?? '';
   }
 }
 
@@ -59,6 +59,15 @@ extension StringExtNullable on String? {
   /// 字符串为null处理
   String or([String defalutStr = '']) {
     return this ?? defalutStr;
+  }
+
+  /// 裁切指定字符串前的部分
+  String? subBefore(String pattern, [bool last = true]) {
+    final str = this;
+    if (str == null || str.isEmpty) return str;
+    final index = last ? str.lastIndexOf(pattern) : str.indexOf(pattern);
+    if (index >= 0) return str.substring(0, index);
+    return str;
   }
 
   /// toast一个字符串

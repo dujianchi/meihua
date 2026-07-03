@@ -320,7 +320,7 @@ class _PanState extends State<_Pan> {
           );
           Get.generalDialog(
             pageBuilder: (context, animation1, animation2) => AlertDialog(
-              title: const Text('ai提示词'),
+              title: const Text('AI提示词'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [question],
@@ -336,9 +336,9 @@ class _PanState extends State<_Pan> {
                       final q = question.text();
                       Get.until((route) => Get.isDialogOpen != true);
                       final prompt = buildAiPrompt(
-                        shang: yi.shang,
-                        xia: yi.xia,
-                        dong: yi.dong,
+                        yi: yi,
+                        date: dhitory.saveDate?.dateStr() ??
+                            widget.now.millisecondsSinceEpoch.dateStr(),
                         question: q,
                       );
                       Get.to(() => AiPromptPage(prompt: prompt));
