@@ -5,6 +5,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:meihua/entity/database/base.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/entity/database/db_8gua.dart';
+import 'package:meihua/entity/database/db_ai_chat.dart';
 import 'package:meihua/entity/database/db_config.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/entity/database/db_history_sync.dart';
@@ -17,6 +18,7 @@ class DbHelper {
     Hive.box<DbConfig>(DbConfig.nameDb),
     Hive.box<DbHistory>(DbHistory.nameDb),
     Hive.box<DbHistorySync>(DbHistorySync.nameDb),
+    Hive.box<DbAiChat>(DbAiChat.nameDb),
   );
 
   // ignore: non_constant_identifier_names
@@ -26,9 +28,10 @@ class DbHelper {
   final Box<DbConfig> _configBox;
   final Box<DbHistory> _historyBox;
   final Box<DbHistorySync> _historySyncBox;
+  final Box<DbAiChat> _aiChatBox;
 
   DbHelper._internal(this._8guaBox, this._64guaBox, this._configBox,
-      this._historyBox, this._historySyncBox);
+      this._historyBox, this._historySyncBox, this._aiChatBox);
 
   factory DbHelper() {
     return _instance;
@@ -75,6 +78,8 @@ class DbHelper {
       return _instance._historyBox;
     } else if (tableName == DbHistorySync.nameDb) {
       return _instance._historySyncBox;
+    } else if (tableName == DbAiChat.nameDb) {
+      return _instance._aiChatBox;
     }
     return null;
   }

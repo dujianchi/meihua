@@ -213,13 +213,14 @@ class DbHistoryAdapter extends TypeAdapter<DbHistory> {
       ..describe = fields[7] as String?
       ..syncHash = fields[8] as String?
       ..updateTime = (fields[9] as num?)?.toInt()
-      ..deleted = (fields[10] as num?)?.toInt();
+      ..deleted = (fields[10] as num?)?.toInt()
+      ..aiMessages = fields[11] as String?;
   }
 
   @override
   void write(BinaryWriter writer, DbHistory obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -241,7 +242,9 @@ class DbHistoryAdapter extends TypeAdapter<DbHistory> {
       ..writeByte(9)
       ..write(obj.updateTime)
       ..writeByte(10)
-      ..write(obj.deleted);
+      ..write(obj.deleted)
+      ..writeByte(11)
+      ..write(obj.aiMessages);
   }
 
   @override
@@ -302,6 +305,57 @@ class DbHistorySyncAdapter extends TypeAdapter<DbHistorySync> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is DbHistorySyncAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class DbAiChatAdapter extends TypeAdapter<DbAiChat> {
+  @override
+  final typeId = 5;
+
+  @override
+  DbAiChat read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return DbAiChat()
+      ..id = (fields[0] as num?)?.toInt()
+      ..historyId = (fields[1] as num?)?.toInt()
+      ..shang = (fields[2] as num?)?.toInt()
+      ..xia = (fields[3] as num?)?.toInt()
+      ..bian = (fields[4] as num?)?.toInt()
+      ..messages = fields[5] as String?
+      ..updateTime = (fields[6] as num?)?.toInt();
+  }
+
+  @override
+  void write(BinaryWriter writer, DbAiChat obj) {
+    writer
+      ..writeByte(7)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.historyId)
+      ..writeByte(2)
+      ..write(obj.shang)
+      ..writeByte(3)
+      ..write(obj.xia)
+      ..writeByte(4)
+      ..write(obj.bian)
+      ..writeByte(5)
+      ..write(obj.messages)
+      ..writeByte(6)
+      ..write(obj.updateTime);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DbAiChatAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

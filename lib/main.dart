@@ -7,6 +7,7 @@ import 'package:get/route_manager.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/entity/database/db_8gua.dart';
+import 'package:meihua/entity/database/db_ai_chat.dart';
 import 'package:meihua/entity/database/db_config.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/entity/database/db_history_sync.dart';
@@ -49,6 +50,7 @@ void main() async {
   await Hive.openBox<DbConfig>(DbConfig.nameDb);
   await Hive.openBox<DbHistory>(DbHistory.nameDb);
   await Hive.openBox<DbHistorySync>(DbHistorySync.nameDb);
+  await Hive.openBox<DbAiChat>(DbAiChat.nameDb);
   DbHelper.initDataIfNeed();
   runApp(MyApp());
 }
