@@ -22,16 +22,13 @@ class AiHelper {
   static const keyModel = 'ai_model';
   static const keyPrompt = 'ai_prompt';
 
-  static const defaultEndpoint = 'https://api.deepseek.com/chat/completions';
-  static const defaultModel = 'deepseek-v4-flash';
-
   /// 加载配置，未设置的项使用默认值
   static Future<AiConfig> loadConfig() async {
     return AiConfig(
-      endpoint: (await ConfigHelper.getConfig(keyEndpoint)).or(defaultEndpoint),
-      apiKey: (await ConfigHelper.getConfig(keyKey)).or(),
-      model: (await ConfigHelper.getConfig(keyModel)).or(defaultModel),
-      customPrompt: (await ConfigHelper.getConfig(keyPrompt)).or(),
+      endpoint: (await ConfigHelper.getConfig(keyEndpoint)).or('https://api.agnes-ai.cn/v1/chat/completions'),
+      apiKey: (await ConfigHelper.getConfig(keyKey)).or('sk-vMbAn2cQcaNwcLxW52O6VPIxpXN4dB1JmTOGDVefEnG1zAWt'),
+      model: (await ConfigHelper.getConfig(keyModel)).or('agnes-2.5-flash'),
+      customPrompt: (await ConfigHelper.getConfig(keyPrompt)).or('{卦象}'),
     );
   }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
 import 'package:meihua/util/ai_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/widget/edit_text.dart';
