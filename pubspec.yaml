@@ -58,6 +58,8 @@ dependencies:
   # json: ^0.20.2
   # https://pub.dev/packages/window_manager
   window_manager: ^0.5.1
+  # https://pub.dev/packages/flutter_markdown_plus
+  flutter_markdown_plus: ^1.0.12
 
 dev_dependencies:
   flutter_test:

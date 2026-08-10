@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/util/ai_helper.dart';
 import 'package:meihua/util/exts.dart';
@@ -88,14 +89,9 @@ class _AiResultPageState extends State<AiResultPage> {
     super.dispose();
   }
 
-  String get _lastReply =>
-      _messages.lastWhere((m) => m['role'] == 'assistant',
-          orElse: () => const {})['content'] ?? '';
-
-  void _copy() async {
-    final text = _lastReply;
-    if (text.isEmpty) return;
-    await Clipboard.setData(ClipboardData(text: text));
+  /// 直接复制指定消息内容
+  void _copyMessage(String content) async {
+    await Clipboard.setData(ClipboardData(text: content));
     '已复制到粘贴板'.toast();
   }
 
@@ -158,13 +154,6 @@ class _AiResultPageState extends State<AiResultPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI解析结果'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.content_copy),
-            tooltip: '复制',
-            onPressed: _copy,
-          ),
-        ],
       ),
       body: SafeArea(
         child: Column(
@@ -204,29 +193,50 @@ class _AiResultPageState extends State<AiResultPage> {
                         final content = message['content'] ?? '';
                         final maxWidth =
                             MediaQuery.sizeOf(context).width * 0.8;
+                        final bubble = Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          constraints: BoxConstraints(maxWidth: maxWidth),
+                          decoration: BoxDecoration(
+                            color: isUser
+                                ? Colors.purple
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: MarkdownBody(
+                            data: content,
+                            styleSheet: MarkdownStyleSheet(
+                              p: TextStyle(
+                                fontSize: 15,
+                                height: 1.5,
+                                color: isUser
+                                    ? Colors.white
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                        final copyBtn = IconButton(
+                          icon: const Icon(Icons.copy, size: 14),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                              minWidth: 28, minHeight: 28),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: '复制',
+                          color: Colors.grey.shade500,
+                          onPressed: () => _copyMessage(content),
+                        );
                         return Align(
                           alignment: isUser
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            constraints: BoxConstraints(maxWidth: maxWidth),
-                            decoration: BoxDecoration(
-                              color:
-                                  isUser ? Colors.purple : Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: SelectableText(
-                              content,
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.5,
-                                color:
-                                    isUser ? Colors.white : Colors.black87,
-                              ),
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: isUser
+                                ? [bubble, copyBtn]
+                                : [copyBtn, bubble],
                           ),
                         );
                       },
