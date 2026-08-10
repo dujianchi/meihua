@@ -26,7 +26,7 @@ import 'package:window_manager/window_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
+  await Hive.initFlutter('meihua');
   Hive.registerAdapters();
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
     // Must add this line.
