@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
+import 'package:meihua/ai_settings.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
@@ -130,6 +131,7 @@ class _HistoryState extends State<History> {
               //PopupMenuItem(value: 0, child: Text(_showAll ? '隐藏全部' : '显示全部')),
               const PopupMenuItem(value: 1, child: Text('同步')),
               const PopupMenuItem(value: 2, child: Text('同步设置')),
+              const PopupMenuItem(value: 3, child: Text('AI设置')),
             ],
             onSelected: (value) => _actionSelected(value),
           ),
@@ -162,8 +164,7 @@ class _HistoryState extends State<History> {
         _actionSelected(2);
       }
     } else if (index == 2) {
-      final (oldServerUrl, oldAccount, oldPassword) =
-          await SyncHelper.getWebDavConf();
+      final (oldServerUrl, oldAccount, oldPassword) =          await SyncHelper.getWebDavConf();
       final etServer = EditText(
             label: '服务器地址',
             defaultStr: oldServerUrl ?? 'https://dav.jianguoyun.com/dav/',
@@ -216,6 +217,8 @@ class _HistoryState extends State<History> {
           scrollable: true,
         ),
       );
+    } else if (index == 3) {
+      Get.to(() => const AiSettingsPage());
     }
   }
 

@@ -15,6 +15,8 @@ class DbHistory extends Base {
   /// 软删标记:0/空=正常,1=已删除(列表不展示,但快照里保留以传播删除)
   int? deleted;
   String? lunarDate, title, describe, syncHash;
+  /// AI解析对话记录(JSON字符串, [{role, content}...]),随记录同步,不影响 syncHash
+  String? aiMessages;
 
   @override
   void fromMap(Map<String, dynamic> map) {
@@ -29,6 +31,7 @@ class DbHistory extends Base {
     syncHash = map['sync_hash'];
     updateTime = map['update_time'];
     deleted = map['deleted'];
+    aiMessages = map['ai_messages'];
   }
 
   @override
@@ -46,6 +49,7 @@ class DbHistory extends Base {
     map['sync_hash'] = syncHash;
     map['update_time'] = updateTime;
     map['deleted'] = deleted;
+    map['ai_messages'] = aiMessages;
     return map;
   }
 

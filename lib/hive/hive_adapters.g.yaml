@@ -81,7 +81,7 @@ types:
         index: 2
   DbHistory:
     typeId: 3
-    nextIndex: 11
+    nextIndex: 12
     fields:
       id:
         index: 0
@@ -105,6 +105,8 @@ types:
         index: 9
       deleted:
         index: 10
+      aiMessages:
+        index: 11
   DbHistorySync:
     typeId: 4
     nextIndex: 7
