@@ -69,6 +69,7 @@ class _AiResultPageState extends State<AiResultPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   bool _loading = false;
+  bool _lastFailed = false;
 
   @override
   void initState() {
@@ -114,7 +115,16 @@ class _AiResultPageState extends State<AiResultPage> {
       _messages.insert(0, {'role': 'system', 'content': system!});
     }
     _messages.add({'role': 'user', 'content': question});
-    setState(() => _loading = true);
+    await _request();
+  }
+
+  /// 发起AI请求(失败后点击"重试"时复用现有消息,不重复添加)
+  Future<void> _request() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _lastFailed = false;
+    });
     _scrollToBottom();
     try {
       final config = await AiHelper.loadConfig();
@@ -123,7 +133,10 @@ class _AiResultPageState extends State<AiResultPage> {
       widget.onUpdate?.call(List.of(_messages));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _lastFailed = true;
+      });
       e.log('AI请求失败: ');
       e.toString().replaceFirst('Exception: ', '').toast(4);
       return;
@@ -132,6 +145,9 @@ class _AiResultPageState extends State<AiResultPage> {
     setState(() => _loading = false);
     _scrollToBottom();
   }
+
+  /// 失败后重试
+  Future<void> _retry() => _request();
 
   @override
   Widget build(BuildContext context) {
@@ -153,9 +169,36 @@ class _AiResultPageState extends State<AiResultPage> {
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.all(12),
-                      itemCount: _messages.length + (_loading ? 1 : 0),
+                      itemCount: _messages.length +
+                          (_loading ? 1 : 0) +
+                          (_lastFailed ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index >= _messages.length) {
+                          if (_lastFailed && !_loading) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.error_outline,
+                                      size: 16, color: Colors.redAccent),
+                                  const SizedBox(width: 6),
+                                  const Text(
+                                    'AI请求失败',
+                                    style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 13),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  OutlinedButton.icon(
+                                    icon: const Icon(Icons.refresh, size: 16),
+                                    label: const Text('重试'),
+                                    onPressed: _retry,
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
                             child: Row(
