@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
 import 'package:meihua/entity/database/db_8gua.dart';
+import 'package:meihua/entity/database/db_ai_chat.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
@@ -43,7 +44,9 @@ class _PanState extends State<_Pan> {
   var dhitory = DbHistory();
   ChongGua? _chongGua;
   String? _titleStr, _descStr;
+  DbAiChat? _aiChat;
   List<Map<String, String>>? _aiMessages;
+  bool _aiLoaded = false;
   TextSpan? _middleString, _bottomString;
 
   Future<TextSpan> _getSkText() async {
@@ -90,12 +93,56 @@ class _PanState extends State<_Pan> {
         dhitory = savedHistory;
         _titleStr = savedHistory.title;
         _descStr = savedHistory.describe;
-        _aiMessages = _decodeAiMessages(savedHistory.aiMessages);
       }
+    }
+    await _loadAiChat();
+  }
+
+  /// 加载AI对话:优先按 historyId 查,未保存排盘历史则按(上卦,下卦,变爻)查;
+  /// 同一卦可能有多段对话,取最新一段。兼容旧数据:历史记录里遗留的
+  /// ai_messages 首次迁移进对话表
+  Future<void> _loadAiChat() async {
+    if (_aiLoaded) return;
+    _aiLoaded = true;
+    final yi = widget.yi;
+    if (yi == null) return;
+    final historyId = yi.historyId;
+    Iterable<DbAiChat>? rows;
+    if (historyId != null) {
+      rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
+          (ls) => ls?.where((t) => t.historyId == historyId));
+    } else {
+      rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb, (ls) => ls?.where(
+          (t) =>
+              t.historyId == null &&
+              t.shang == yi.shang &&
+              t.xia == yi.xia &&
+              t.bian == yi.dong));
+    }
+    final chat = rows?.isNotEmpty == true
+        ? rows!.reduce((a, b) =>
+            (a.updateTime ?? 0) >= (b.updateTime ?? 0) ? a : b)
+        : null;
+    _aiChat = chat;
+    _aiMessages = chat == null
+        ? null
+        : _decodeAiMessages(chat.messages);
+    // 兼容旧数据:老历史记录里遗留的 ai_messages 迁移成一段新对话
+    if (chat == null && dhitory.aiMessages?.isNotEmpty == true) {
+      final legacy = DbAiChat()
+        ..historyId = historyId
+        ..shang = yi.shang
+        ..xia = yi.xia
+        ..bian = yi.dong
+        ..messages = dhitory.aiMessages
+        ..touch();
+      legacy.id = await DbHelper.save(legacy);
+      _aiChat = legacy;
+      _aiMessages = _decodeAiMessages(legacy.messages);
     }
   }
 
-  /// 解析历史记录的AI对话JSON;损坏或空返回null
+  /// 解析对话JSON;损坏或空返回null
   List<Map<String, String>>? _decodeAiMessages(String? json) {
     if (json?.isNotEmpty != true) return null;
     try {
@@ -109,15 +156,18 @@ class _PanState extends State<_Pan> {
     }
   }
 
-  /// AI对话更新回调:持久化到历史记录(未保存时先留在内存,保存时再落库)
+  /// AI对话更新回调:实时写入对话表(不参与同步)。对话始终关联一条排盘历史
   Future<void> _onAiMessagesUpdate(List<Map<String, String>> messages) async {
     _aiMessages = messages;
-    if (dhitory.id == null) return;
-    dhitory.aiMessages = jsonEncode(messages);
-    dhitory.ensureSyncHash();
-    dhitory.touch();
-    await DbHelper.update(dhitory);
-    SyncHelper.scheduleAutoSync();
+    final yi = widget.yi;
+    var chat = _aiChat ??= DbAiChat()
+      ..historyId = yi?.historyId ?? dhitory.id
+      ..shang = yi?.shang
+      ..xia = yi?.xia
+      ..bian = yi?.dong;
+    chat.messages = jsonEncode(messages);
+    chat.touch();
+    await DbHelper.save(chat);
   }
 
   @override
@@ -392,12 +442,21 @@ class _PanState extends State<_Pan> {
     }
   }
 
-  /// 直接提问:与原来的AI解析一致——已有历史对话则直接打开聊天页查看/追问,
+  /// 直接提问:对话开始前若还没有排盘历史则先自动保存一条(标题用"本卦之变卦"),
+  /// 确保对话始终挂在排盘历史上;已有对话历史则直接打开聊天页查看/追问,
   /// 否则按设定提示词发起首次AI解析(对话框填的"问事背景"作为背景)
   Future<void> _aiAsk(Yi yi, String question) async {
+    await _loadAiChat();
+    if (dhitory.id == null) await _autoSaveHistory();
     final systemPrompt = buildAiSystemPrompt();
     final messages = _aiMessages;
     if (messages.isNoneEmpty) {
+      // 旧数据遗留的未关联对话,顺手挂到新保存的排盘历史下
+      final chat = _aiChat;
+      if (chat != null && chat.historyId == null) {
+        chat.historyId = dhitory.id;
+        await DbHelper.update(chat);
+      }
       Get.to(() => AiResultPage(
             systemPrompt: systemPrompt,
             initialMessages: messages,
@@ -419,6 +478,25 @@ class _PanState extends State<_Pan> {
           pendingUserContent: content,
           onUpdate: _onAiMessagesUpdate,
         ));
+  }
+
+  /// 自动保存一条排盘历史,标题默认"本卦之变卦"
+  Future<void> _autoSaveHistory() async {
+    final yi = widget.yi;
+    if (yi == null) return;
+    final gua = yi.gua();
+    _titleStr ??= '${gua[0].name()}之${gua[2].name()}';
+    dhitory.shang ??= yi.shang;
+    dhitory.xia ??= yi.xia;
+    dhitory.bian ??= yi.dong;
+    dhitory.title = _titleStr!;
+    dhitory.saveDate ??= widget.now.millisecondsSinceEpoch;
+    dhitory.lunarDate ??= widget.now.toLunar().niceStr();
+    dhitory.ensureSyncHash();
+    dhitory.touch();
+    dhitory.id = await DbHelper.save(dhitory);
+    SyncHelper.scheduleAutoSync();
+    '已自动保存排盘历史'.toast();
   }
 
   void _saveOrUpdate() async {
@@ -444,11 +522,16 @@ class _PanState extends State<_Pan> {
     dhitory.saveDate ??= widget.now.millisecondsSinceEpoch;
     dhitory.lunarDate ??= widget.now.toLunar().niceStr();
     dhitory.describe = _descStr;
-    dhitory.aiMessages =
-        _aiMessages == null ? null : jsonEncode(_aiMessages);
     dhitory.ensureSyncHash();
     dhitory.touch();
     dhitory.id = await DbHelper.save(dhitory);
+
+    // 保存排盘历史后,把对话表里未关联的记录挂到新历史id下
+    final chat = _aiChat;
+    if (chat != null && chat.historyId == null) {
+      chat.historyId = dhitory.id;
+      await DbHelper.update(chat);
+    }
 
     SyncHelper.scheduleAutoSync();
   }
@@ -456,8 +539,6 @@ class _PanState extends State<_Pan> {
   Future<void> _updateHistory() async {
     dhitory.title = _titleStr!;
     dhitory.describe = _descStr;
-    dhitory.aiMessages =
-        _aiMessages == null ? null : jsonEncode(_aiMessages);
     dhitory.ensureSyncHash();
     dhitory.touch();
     await DbHelper.update(dhitory);

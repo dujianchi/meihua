@@ -42,11 +42,10 @@ class AiPromptPage extends StatelessWidget {
   }
 }
 
-/// AI 解析结果页：展示模型返回的解卦内容，可继续追问，右上角可复制最近回复。
+/// AI 解析结果页：展示模型返回的解卦内容，可继续追问，气泡旁小图标复制单条消息。
 /// [systemPrompt] 首次调用时作为 system 消息注入(已含 system 消息的历史对话不会重复注入)；
 /// [initialMessages] 传入历史对话可继续追问；[pendingUserContent] 非空时进入页面自动发送首轮消息；
-/// [onUpdate] 每次对话更新后回调(用于持久化)。对话条数超过 [maxMessages] 时自动裁剪，
-/// 保留首条锚点消息(卦象信息)+最近若干条。
+/// [onUpdate] 每次对话更新后回调(用于实时持久化)。
 class AiResultPage extends StatefulWidget {
   final String? systemPrompt;
   final List<Map<String, String>>? initialMessages;
@@ -65,8 +64,6 @@ class AiResultPage extends StatefulWidget {
 }
 
 class _AiResultPageState extends State<AiResultPage> {
-  /// 持久化对话条数上限(含system),超出后裁掉中间部分
-  static const int maxMessages = 10;
   late final List<Map<String, String>> _messages =
       List.of(widget.initialMessages ?? []);
   final _controller = TextEditingController();
@@ -107,18 +104,6 @@ class _AiResultPageState extends State<AiResultPage> {
     });
   }
 
-  /// 裁剪对话:保留首条锚点消息(含卦象信息)+最近若干条,避免 ai_messages 无限膨胀
-  void _trimMessages() {
-    if (_messages.length <= maxMessages) return;
-    final anchor = _messages.first;
-    final kept =
-        <Map<String, String>>[anchor, ..._messages.sublist(_messages.length - (maxMessages - 1))];
-    _messages
-      ..clear()
-      ..addAll(kept);
-    '对话过长，已自动裁剪，仅保留最近${maxMessages - 1}条'.toast();
-  }
-
   Future<void> _send([String? preset]) async {
     final question = (preset ?? _controller.text).trim();
     if (question.isEmpty || _loading) return;
@@ -135,7 +120,6 @@ class _AiResultPageState extends State<AiResultPage> {
       final config = await AiHelper.loadConfig();
       final result = await AiHelper.chat(config, List.of(_messages));
       _messages.add({'role': 'assistant', 'content': result});
-      _trimMessages();
       widget.onUpdate?.call(List.of(_messages));
     } catch (e) {
       if (!mounted) return;

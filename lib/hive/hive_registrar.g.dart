@@ -9,6 +9,7 @@ extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
     registerAdapter(Db64guaAdapter());
     registerAdapter(Db8guaAdapter());
+    registerAdapter(DbAiChatAdapter());
     registerAdapter(DbConfigAdapter());
     registerAdapter(DbHistoryAdapter());
     registerAdapter(DbHistorySyncAdapter());
@@ -19,6 +20,7 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
     registerAdapter(Db64guaAdapter());
     registerAdapter(Db8guaAdapter());
+    registerAdapter(DbAiChatAdapter());
     registerAdapter(DbConfigAdapter());
     registerAdapter(DbHistoryAdapter());
     registerAdapter(DbHistorySyncAdapter());
