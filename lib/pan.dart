@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/entity/database/db_64gua.dart';
@@ -7,6 +9,7 @@ import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/util/sync_helper.dart';
+import 'package:meihua/util/ai_helper.dart';
 import 'package:meihua/ai_prompt.dart';
 import 'package:meihua/widget/chong_gua.dart';
 import 'package:meihua/widget/edit_text.dart';
@@ -40,6 +43,7 @@ class _PanState extends State<_Pan> {
   var dhitory = DbHistory();
   ChongGua? _chongGua;
   String? _titleStr, _descStr;
+  List<Map<String, String>>? _aiMessages;
   TextSpan? _middleString, _bottomString;
 
   Future<TextSpan> _getSkText() async {
@@ -86,8 +90,34 @@ class _PanState extends State<_Pan> {
         dhitory = savedHistory;
         _titleStr = savedHistory.title;
         _descStr = savedHistory.describe;
+        _aiMessages = _decodeAiMessages(savedHistory.aiMessages);
       }
     }
+  }
+
+  /// 解析历史记录的AI对话JSON;损坏或空返回null
+  List<Map<String, String>>? _decodeAiMessages(String? json) {
+    if (json?.isNotEmpty != true) return null;
+    try {
+      final list = jsonDecode(json!) as List<dynamic>;
+      return list
+          .map((e) => Map<String, String>.from(e as Map))
+          .toList(growable: true);
+    } catch (e) {
+      e.log('ai_messages 解析失败: ');
+      return null;
+    }
+  }
+
+  /// AI对话更新回调:持久化到历史记录(未保存时先留在内存,保存时再落库)
+  Future<void> _onAiMessagesUpdate(List<Map<String, String>> messages) async {
+    _aiMessages = messages;
+    if (dhitory.id == null) return;
+    dhitory.aiMessages = jsonEncode(messages);
+    dhitory.ensureSyncHash();
+    dhitory.touch();
+    await DbHelper.update(dhitory);
+    SyncHelper.scheduleAutoSync();
   }
 
   @override
@@ -308,7 +338,7 @@ class _PanState extends State<_Pan> {
         }
         break;
       case 2:
-        // ai提示词：弹出输入框问"问的是什么"，跳转到提示词展示页
+        // ai提示词：弹出输入框问"问的是什么"，可生成提示词复制，也可直接提问
         final yi = widget.yi;
         if (yi == null) {
           '数据为空'.toast();
@@ -335,6 +365,13 @@ class _PanState extends State<_Pan> {
                     onPressed: () {
                       final q = question.text();
                       Get.until((route) => Get.isDialogOpen != true);
+                      _aiAsk(yi, q);
+                    },
+                    child: const Text('直接提问')),
+                TextButton(
+                    onPressed: () {
+                      final q = question.text();
+                      Get.until((route) => Get.isDialogOpen != true);
                       final prompt = buildAiPrompt(
                         yi: yi,
                         date: dhitory.saveDate?.dateStr() ??
@@ -353,6 +390,35 @@ class _PanState extends State<_Pan> {
       default:
         break;
     }
+  }
+
+  /// 直接提问:与原来的AI解析一致——已有历史对话则直接打开聊天页查看/追问,
+  /// 否则按设定提示词发起首次AI解析(对话框填的"问事背景"作为背景)
+  Future<void> _aiAsk(Yi yi, String question) async {
+    final systemPrompt = buildAiSystemPrompt();
+    final messages = _aiMessages;
+    if (messages.isNoneEmpty) {
+      Get.to(() => AiResultPage(
+            systemPrompt: systemPrompt,
+            initialMessages: messages,
+            onUpdate: _onAiMessagesUpdate,
+          ));
+      return;
+    }
+    final config = await AiHelper.loadConfig();
+    final content = AiHelper.buildUserContent(
+        config,
+        buildAiUserContent(
+          yi: yi,
+          date: dhitory.saveDate?.dateStr() ??
+              widget.now.millisecondsSinceEpoch.dateStr(),
+          question: question.isBlank ? _titleStr : question,
+        ));
+    Get.to(() => AiResultPage(
+          systemPrompt: systemPrompt,
+          pendingUserContent: content,
+          onUpdate: _onAiMessagesUpdate,
+        ));
   }
 
   void _saveOrUpdate() async {
@@ -378,6 +444,8 @@ class _PanState extends State<_Pan> {
     dhitory.saveDate ??= widget.now.millisecondsSinceEpoch;
     dhitory.lunarDate ??= widget.now.toLunar().niceStr();
     dhitory.describe = _descStr;
+    dhitory.aiMessages =
+        _aiMessages == null ? null : jsonEncode(_aiMessages);
     dhitory.ensureSyncHash();
     dhitory.touch();
     dhitory.id = await DbHelper.save(dhitory);
@@ -388,6 +456,8 @@ class _PanState extends State<_Pan> {
   Future<void> _updateHistory() async {
     dhitory.title = _titleStr!;
     dhitory.describe = _descStr;
+    dhitory.aiMessages =
+        _aiMessages == null ? null : jsonEncode(_aiMessages);
     dhitory.ensureSyncHash();
     dhitory.touch();
     await DbHelper.update(dhitory);
