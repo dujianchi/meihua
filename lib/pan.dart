@@ -289,7 +289,7 @@ class _PanState extends State<_Pan> {
       PopupMenuButton(
         itemBuilder: (context) => const [
           PopupMenuItem(value: 1, child: Text('删除')),
-          PopupMenuItem(value: 2, child: Text('AI提示词')),
+          PopupMenuItem(value: 2, child: Text('AI解析')),
         ],
         onSelected: (value) => _actionSelected(value),
       ),
@@ -400,7 +400,7 @@ class _PanState extends State<_Pan> {
           );
           Get.generalDialog(
             pageBuilder: (context, animation1, animation2) => AlertDialog(
-              title: const Text('AI提示词'),
+              title: const Text('AI解析'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [question],
@@ -430,7 +430,7 @@ class _PanState extends State<_Pan> {
                       );
                       Get.to(() => AiPromptPage(prompt: prompt));
                     },
-                    child: const Text('生成')),
+                    child: const Text('生成AI提示词')),
               ],
               scrollable: true,
             ),

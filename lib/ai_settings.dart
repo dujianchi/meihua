@@ -37,7 +37,6 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
       customPrompt: customPrompt,
     );
     '保存成功'.toast();
-    Get.back();
   }
 
   @override
@@ -94,7 +93,9 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
             prompt,
             const SizedBox(height: 8),
             const Text(
-              '提示词模板中可用 {卦象} 占位符，实际解析时会替换为本卦/互卦/变卦等信息；留空则使用默认解卦提示词。',
+              '自定义提示词：留空则使用默认解卦提示词；填写则替换默认提示词作为发送给AI的用户消息。'
+              '可用 {卦象} 占位符，发送时会替换为本卦/互卦/变卦/动爻/时间/问事背景等信息，'
+              '建议必带，否则AI将看不到卦象信息。\n示例：请用{卦象}解卦，重点分析事业，最后给三条建议。',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
