@@ -109,24 +109,23 @@ class _PanState extends State<_Pan> {
     final historyId = yi.historyId;
     Iterable<DbAiChat>? rows;
     if (historyId != null) {
-      rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
-          (ls) => ls?.where((t) => t.historyId == historyId));
+      rows = await DbHelper.query<DbAiChat>(
+          DbAiChat.nameDb, (ls) => ls?.where((t) => t.historyId == historyId));
     } else {
-      rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb, (ls) => ls?.where(
-          (t) =>
+      rows = await DbHelper.query<DbAiChat>(
+          DbAiChat.nameDb,
+          (ls) => ls?.where((t) =>
               t.historyId == null &&
               t.shang == yi.shang &&
               t.xia == yi.xia &&
               t.bian == yi.dong));
     }
     final chat = rows?.isNotEmpty == true
-        ? rows!.reduce((a, b) =>
-            (a.updateTime ?? 0) >= (b.updateTime ?? 0) ? a : b)
+        ? rows!.reduce(
+            (a, b) => (a.updateTime ?? 0) >= (b.updateTime ?? 0) ? a : b)
         : null;
     _aiChat = chat;
-    _aiMessages = chat == null
-        ? null
-        : _decodeAiMessages(chat.messages);
+    _aiMessages = chat == null ? null : _decodeAiMessages(chat.messages);
     // 兼容旧数据:老历史记录里遗留的 ai_messages 迁移成一段新对话
     if (chat == null && dhitory.aiMessages?.isNotEmpty == true) {
       final legacy = DbAiChat()
@@ -447,7 +446,7 @@ class _PanState extends State<_Pan> {
   /// 否则按设定提示词发起首次AI解析(对话框填的"问事背景"作为背景)
   Future<void> _aiAsk(Yi yi, String question) async {
     await _loadAiChat();
-    if (dhitory.id == null) await _autoSaveHistory();
+    if (dhitory.id == null) await _autoSaveHistory(question);
     final systemPrompt = buildAiSystemPrompt();
     final messages = _aiMessages;
     if (messages.isNoneEmpty) {
@@ -481,11 +480,11 @@ class _PanState extends State<_Pan> {
   }
 
   /// 自动保存一条排盘历史,标题默认"本卦之变卦"
-  Future<void> _autoSaveHistory() async {
+  Future<void> _autoSaveHistory([String? title]) async {
     final yi = widget.yi;
     if (yi == null) return;
     final gua = yi.gua();
-    _titleStr ??= '${gua[0].name()}之${gua[2].name()}';
+    _titleStr ??= (title ?? '${gua[0].name()}之${gua[2].name()}');
     dhitory.shang ??= yi.shang;
     dhitory.xia ??= yi.xia;
     dhitory.bian ??= yi.dong;
