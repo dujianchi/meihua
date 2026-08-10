@@ -26,7 +26,7 @@ class AiHelper {
   static Future<AiConfig> loadConfig() async {
     return AiConfig(
       endpoint: (await ConfigHelper.getConfig(keyEndpoint)).or('https://api.agnes-ai.cn/v1/chat/completions'),
-      apiKey: (await ConfigHelper.getConfig(keyKey)).or('sk-vMbAn2cQcaNwcLxW52O6VPIxpXN4dB1JmTOGDVefEnG1zAWt'),
+      apiKey: (await ConfigHelper.getConfig(keyKey)).or('sk-gVla6Pca3kbNCcybrTPbFTSnz7FmtUwEHIpBSTM97UgyTHJf'),
       model: (await ConfigHelper.getConfig(keyModel)).or('agnes-2.5-flash'),
       customPrompt: (await ConfigHelper.getConfig(keyPrompt)).or('{卦象}'),
     );
