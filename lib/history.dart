@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/ai_settings.dart';
@@ -58,8 +59,21 @@ class _HistoryState extends State<History> {
         if (item.describe?.isNotEmpty == true) {
           contentChildren.add(Visibility(
             visible: visible,
-            child: Text('详细说明: ${item.describe}',
-                style: const TextStyle(color: Colors.blueAccent)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('详细说明:',
+                    style: TextStyle(color: Colors.blueAccent)),
+                MarkdownBody(
+                  data: item.describe!,
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ));
         }
         return ListTile(
