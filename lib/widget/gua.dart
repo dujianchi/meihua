@@ -9,13 +9,13 @@ import 'package:meihua/widget/yao.dart';
 class Gua extends StatelessWidget {
   final BaGua? baGua;
   final double spacing;
-  final Color background;
+  final Color? background;
 
   const Gua({
     super.key,
     this.baGua,
     this.spacing = 10,
-    this.background = Colors.white,
+    this.background,
   });
 
   @override
@@ -138,7 +138,8 @@ class Gua extends StatelessWidget {
       return Stack(
         children: [
           Container(
-            color: background, // 白底
+            // 白底(暗黑模式用主题表面色)
+            color: background ?? Theme.of(context).colorScheme.surface,
             margin: EdgeInsets.all(spacing),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -152,7 +153,9 @@ class Gua extends StatelessWidget {
               baGua?.name ?? '',
               style: TextStyle(
                 fontSize: 24,
-                background: Paint()..color = Colors.white24,
+                background: Paint()
+                  ..color =
+                      Theme.of(context).colorScheme.surface.withValues(alpha: .6),
                 foreground: Paint()..color = Colors.blueAccent,
               ),
             ),

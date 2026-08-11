@@ -220,6 +220,8 @@ class _AiResultPageState extends State<AiResultPage> {
                         final content = message['content'] ?? '';
                         final maxWidth =
                             MediaQuery.sizeOf(context).width * 0.8;
+                        final isDark =
+                            Theme.of(context).brightness == Brightness.dark;
                         final bubble = Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.symmetric(
@@ -228,7 +230,9 @@ class _AiResultPageState extends State<AiResultPage> {
                           decoration: BoxDecoration(
                             color: isUser
                                 ? Colors.purple
-                                : Colors.grey.shade200,
+                                : (isDark
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade200),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: MarkdownBody(
@@ -239,7 +243,9 @@ class _AiResultPageState extends State<AiResultPage> {
                                 height: 1.5,
                                 color: isUser
                                     ? Colors.white
-                                    : Colors.black87,
+                                    : (isDark
+                                        ? Colors.white
+                                        : Colors.black87),
                               ),
                             ),
                           ),
@@ -251,7 +257,11 @@ class _AiResultPageState extends State<AiResultPage> {
                               minWidth: 28, minHeight: 28),
                           visualDensity: VisualDensity.compact,
                           tooltip: '复制',
-                          color: Colors.grey.shade500,
+                          color: isUser
+                              ? Colors.white70
+                              : (isDark
+                                  ? Colors.white38
+                                  : Colors.grey.shade500),
                           onPressed: () => _copyMessage(content),
                         );
                         return Align(

@@ -52,30 +52,45 @@ class _PanState extends State<_Pan> {
   Future<TextSpan> _getSkText() async {
     final dong = widget.yi!.dong;
     final gua64 = _chongGua?.gua();
+    final textGrey = Theme.of(context).colorScheme.onSurfaceVariant;
     if (gua64?.shang != gua64?.xia) {
       final shang8 = await Db8gua.fromName(gua64?.shang.name),
           xia8 = await Db8gua.fromName(gua64?.xia.name);
       return TextSpan(
           text: gua64?.tiyong(dong),
-          children: [shang8!.toText(), xia8!.toText()]);
+          children: [
+            shang8!.toText(textGrey: textGrey),
+            xia8!.toText(textGrey: textGrey),
+          ]);
     } else {
       final shang8 = await Db8gua.fromName(gua64?.shang.name);
-      return TextSpan(text: gua64?.tiyong(dong), children: [shang8!.toText()]);
+      return TextSpan(
+          text: gua64?.tiyong(dong),
+          children: [shang8!.toText(textGrey: textGrey)]);
     }
   }
 
   void _changeChongGua(ChongGua chongGua) async {
+    final scheme = Theme.of(context).colorScheme;
     final db64gua = await Db64gua.fromFullname(chongGua.gua()!.name());
     if (db64gua != null) {
-      _middleString = db64gua.toText(dong: chongGua.hu ? null : chongGua.bian);
+      _middleString = db64gua.toText(
+        dong: chongGua.hu ? null : chongGua.bian,
+        textColor: scheme.onSurface,
+        textGrey: scheme.onSurfaceVariant,
+      );
       if (db64gua.shang != db64gua.xia) {
         final shangTxt = await Db8gua.fromName(db64gua.shang),
             xiaTxt = await Db8gua.fromName(db64gua.xia);
         _bottomString = TextSpan(
-            children: [shangTxt!.leiXiangStr(), xiaTxt!.leiXiangStr()]);
+            children: [
+              shangTxt!.leiXiangStr(textGrey: scheme.onSurfaceVariant),
+              xiaTxt!.leiXiangStr(textGrey: scheme.onSurfaceVariant),
+            ]);
       } else {
         final shangTxt = await Db8gua.fromName(db64gua.shang);
-        _bottomString = shangTxt!.leiXiangStr();
+        _bottomString =
+            shangTxt!.leiXiangStr(textGrey: scheme.onSurfaceVariant);
       }
     }
     setState(() {
