@@ -113,6 +113,22 @@ class _PanState extends State<_Pan> {
     await _loadAiChat();
   }
 
+  Brightness? _themeBrightness;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 主题切换时用新主题色重算底部缓存的卦辞/类象文本
+    final brightness = Theme.of(context).brightness;
+    if (_themeBrightness != brightness) {
+      _themeBrightness = brightness;
+      final chongGua = _chongGua;
+      if (chongGua != null) {
+        _changeChongGua(chongGua);
+      }
+    }
+  }
+
   /// 加载AI对话:优先按 historyId 查,未保存排盘历史则按(上卦,下卦,变爻)查;
   /// 同一卦可能有多段对话,取最新一段。兼容旧数据:历史记录里遗留的
   /// ai_messages 首次迁移进对话表
