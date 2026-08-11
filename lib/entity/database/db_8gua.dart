@@ -50,9 +50,9 @@ class Db8gua extends Base {
     return map;
   }
 
-  TextSpan toText({double fontSize = 14.0}) {
+  TextSpan toText({double fontSize = 14.0, Color? textGrey}) {
     final children = <InlineSpan>[];
-    final grey = TextStyle(color: Colors.grey, fontSize: fontSize),
+    final grey = TextStyle(color: textGrey ?? Colors.grey, fontSize: fontSize),
         red = TextStyle(color: Colors.red, fontSize: fontSize + 2);
     children.add(TextSpan(text: '\n$name ', style: red));
     children.add(TextSpan(text: '''旺于$guaQiWang，衰于$guaQiShuai
@@ -61,9 +61,9 @@ $shuLei
     return TextSpan(children: children);
   }
 
-  TextSpan leiXiangStr({double fontSize = 14.0}) {
+  TextSpan leiXiangStr({double fontSize = 14.0, Color? textGrey}) {
     final children = <InlineSpan>[];
-    final grey = TextStyle(color: Colors.grey, fontSize: fontSize),
+    final grey = TextStyle(color: textGrey ?? Colors.grey, fontSize: fontSize),
         red = TextStyle(color: Colors.red, fontSize: fontSize + 2);
     children.add(TextSpan(text: '$name\n', style: red));
     children.add(TextSpan(text: '$leiXiang\n', style: grey));

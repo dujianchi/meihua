@@ -77,10 +77,17 @@ class Db64gua extends Base {
     return map;
   }
 
-  TextSpan toText({int? dong, double fontSize = 16.0}) {
+  TextSpan toText({
+    int? dong,
+    double fontSize = 16.0,
+    Color? textColor,
+    Color? textGrey,
+  }) {
     final children = <InlineSpan>[];
-    final black = TextStyle(color: Colors.black, fontSize: fontSize),
-        grey = TextStyle(color: Colors.grey, fontSize: fontSize),
+    final black = TextStyle(
+            color: textColor ?? Colors.black, fontSize: fontSize),
+        grey =
+            TextStyle(color: textGrey ?? Colors.grey, fontSize: fontSize),
         redLighter =
             TextStyle(color: Colors.redAccent[100], fontSize: fontSize),
         red = TextStyle(color: Colors.red, fontSize: fontSize);
