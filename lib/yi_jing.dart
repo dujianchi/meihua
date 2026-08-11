@@ -90,13 +90,21 @@ class YiJingDetail extends StatelessWidget {
         ),
         body: Padding(
           padding: const EdgeInsets.all(10),
-          child: SelectableText.rich(TextSpan(children: [
-            TextSpan(
-                text:
-                    '第${db64gua.id}卦 ${db64gua.name}卦，${db64gua.fullName}，上${db64gua.shang}下${db64gua.xia}\n\n',
-                style: const TextStyle(color: Colors.blueGrey, fontSize: 18)),
-            db64gua.toText(fontSize: 17),
-          ])),
+          child: Builder(builder: (context) {
+            final scheme = Theme.of(context).colorScheme;
+            return SelectableText.rich(TextSpan(children: [
+              TextSpan(
+                  text:
+                      '第${db64gua.id}卦 ${db64gua.name}卦，${db64gua.fullName}，上${db64gua.shang}下${db64gua.xia}\n\n',
+                  style: TextStyle(
+                      color: scheme.onSurfaceVariant, fontSize: 18)),
+              db64gua.toText(
+                fontSize: 17,
+                textColor: scheme.onSurface,
+                textGrey: scheme.onSurfaceVariant,
+              ),
+            ]));
+          }),
         ),
       );
 }
