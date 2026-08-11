@@ -49,9 +49,11 @@ class _HistoryState extends State<History> {
             ],
           ),
           Text('时间: ${item.saveDate.dateStr()}',
-              style: const TextStyle(color: Colors.blueGrey)),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
           Text('农历时间: ${item.lunarDate.or()}',
-              style: const TextStyle(color: Colors.blueGrey)),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ];
         if (item.describe?.isNotEmpty == true) {
           contentChildren.add(Visibility(
@@ -116,7 +118,6 @@ class _HistoryState extends State<History> {
       },
       itemCount: _historyList.length,
       separatorBuilder: (BuildContext context, int index) => const Divider(
-        color: Colors.grey,
         thickness: 0,
         height: 0.1,
       ),

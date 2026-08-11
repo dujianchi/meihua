@@ -137,40 +137,40 @@ class MyApp extends StatelessWidget {
       TextSpan(
           text: '☰${BaGua.qian.name}一 ',
           style: TextStyle(
-            color: BaGua.qian.wuXing.color,
+            color: _wxTextColor(context, BaGua.qian.wuXing.color),
           )),
       TextSpan(
           text: '☱${BaGua.dui.name}二 ',
           style: TextStyle(
-            color: BaGua.dui.wuXing.color,
+            color: _wxTextColor(context, BaGua.dui.wuXing.color),
           )),
       TextSpan(
           text: '☲${BaGua.li.name}三 ',
-          style: TextStyle(color: BaGua.li.wuXing.color)),
+          style: TextStyle(color: _wxTextColor(context, BaGua.li.wuXing.color))),
       TextSpan(
           text: '☳${BaGua.zhen.name}四 ',
           style: TextStyle(
-            color: BaGua.zhen.wuXing.color,
+            color: _wxTextColor(context, BaGua.zhen.wuXing.color),
           )),
       TextSpan(
           text: '☴${BaGua.xun.name}五 ',
           style: TextStyle(
-            color: BaGua.xun.wuXing.color,
+            color: _wxTextColor(context, BaGua.xun.wuXing.color),
           )),
       TextSpan(
           text: '☵${BaGua.kan.name}六 ',
           style: TextStyle(
-            color: BaGua.kan.wuXing.color,
+            color: _wxTextColor(context, BaGua.kan.wuXing.color),
           )),
       TextSpan(
           text: '☶${BaGua.gen.name}七 ',
           style: TextStyle(
-            color: BaGua.gen.wuXing.color,
+            color: _wxTextColor(context, BaGua.gen.wuXing.color),
           )),
       TextSpan(
           text: '☷${BaGua.kun.name}八 ',
           style: TextStyle(
-            color: BaGua.kun.wuXing.color,
+            color: _wxTextColor(context, BaGua.kun.wuXing.color),
           )),
     ]))));
     children.add(editext3_1);
@@ -247,8 +247,15 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  void goPan(int shang, int xia, int dong) {
-    Get.toNamed('pan',
+  /// 暗黑模式下五行文字色(水黑、土灰)提亮,保证可读
+  Color _wxTextColor(BuildContext context, Color color) {
+    if (Theme.of(context).brightness == Brightness.dark) {
+      return Color.lerp(color, Colors.white, 0.5)!;
+    }
+    return color;
+  }
+
+  void goPan(int shang, int xia, int dong) {    Get.toNamed('pan',
         arguments: Yi(
             shang: shang == 0 ? 8 : shang,
             xia: xia == 0 ? 8 : xia,
