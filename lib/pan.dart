@@ -200,6 +200,33 @@ class _PanState extends State<_Pan> {
     await DbHelper.save(chat);
   }
 
+  /// 重新生成首轮提示词(含最新农历/季节),供聊天页"重新对话"使用
+  Future<String?> _buildAiUserContent() async {
+    final yi = widget.yi;
+    if (yi == null) return null;
+    final castTime = _castTime;
+    final config = await AiHelper.loadConfig();
+    return AiHelper.buildUserContent(
+        config,
+        buildAiUserContent(
+          yi: yi,
+          date: castTime.millisecondsSinceEpoch.dateStr(),
+          question: _titleStr,
+          lunarDate: dhitory.lunarDate ?? castTime.toLunar().niceStr(),
+          season: castTime.toLunar().seasion,
+        ));
+  }
+
+  /// 重新对话确认后:删除已持久化的对话记录,等待新对话重新写入
+  Future<void> _onAiChatClear() async {
+    final chat = _aiChat;
+    if (chat?.id != null) {
+      await DbHelper.delete(DbAiChat.nameDb, (t) => t.id == chat!.id);
+    }
+    _aiChat = null;
+    _aiMessages = null;
+  }
+
   @override
   void initState() {
     _updateTitleDesc();
@@ -452,11 +479,14 @@ class _PanState extends State<_Pan> {
                     onPressed: () {
                       final q = question.text();
                       Get.until((route) => Get.isDialogOpen != true);
+                      final castTime = _castTime;
                       final prompt = buildAiPrompt(
                         yi: yi,
-                        date: dhitory.saveDate?.dateStr() ??
-                            widget.now.millisecondsSinceEpoch.dateStr(),
+                        date: castTime.millisecondsSinceEpoch.dateStr(),
                         question: q,
+                        lunarDate:
+                            dhitory.lunarDate ?? castTime.toLunar().niceStr(),
+                        season: castTime.toLunar().seasion,
                       );
                       Get.to(() => AiPromptPage(prompt: prompt));
                     },
@@ -471,6 +501,11 @@ class _PanState extends State<_Pan> {
         break;
     }
   }
+
+  /// 起卦时刻:优先用已保存历史的起卦时间,否则当前时间
+  DateTime get _castTime => dhitory.saveDate != null
+      ? DateTime.fromMillisecondsSinceEpoch(dhitory.saveDate!)
+      : widget.now;
 
   /// 直接提问:对话开始前若还没有排盘历史则先自动保存一条(标题用"本卦之变卦"),
   /// 确保对话始终挂在排盘历史上;已有对话历史则直接打开聊天页查看/追问,
@@ -491,22 +526,28 @@ class _PanState extends State<_Pan> {
             systemPrompt: systemPrompt,
             initialMessages: messages,
             onUpdate: _onAiMessagesUpdate,
+            onClear: _onAiChatClear,
+            buildPrompt: _buildAiUserContent,
           ));
       return;
     }
     final config = await AiHelper.loadConfig();
+    final castTime = _castTime;
     final content = AiHelper.buildUserContent(
         config,
         buildAiUserContent(
           yi: yi,
-          date: dhitory.saveDate?.dateStr() ??
-              widget.now.millisecondsSinceEpoch.dateStr(),
+          date: castTime.millisecondsSinceEpoch.dateStr(),
           question: question.isBlank ? _titleStr : question,
+          lunarDate: dhitory.lunarDate ?? castTime.toLunar().niceStr(),
+          season: castTime.toLunar().seasion,
         ));
     Get.to(() => AiResultPage(
           systemPrompt: systemPrompt,
           pendingUserContent: content,
           onUpdate: _onAiMessagesUpdate,
+          onClear: _onAiChatClear,
+          buildPrompt: _buildAiUserContent,
         ));
   }
 

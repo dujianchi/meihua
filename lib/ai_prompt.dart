@@ -44,19 +44,25 @@ class AiPromptPage extends StatelessWidget {
 
 /// AI 解析结果页：展示模型返回的解卦内容，可继续追问，气泡旁小图标复制单条消息。
 /// [systemPrompt] 首次调用时作为 system 消息注入(已含 system 消息的历史对话不会重复注入)；
-/// [initialMessages] 传入历史对话可继续追问；[pendingUserContent] 非空时进入页面自动发送首轮消息；
-/// [onUpdate] 每次对话更新后回调(用于实时持久化)。
+/// [initialMessages] 传入历史对话可继续追问；[pendingUserContent] 非空时填入输入框,
+/// 由用户点击发送后才开始第一轮对话；[onUpdate] 每次对话更新后回调(用于实时持久化)；
+/// [onClear] 确认重新对话后回调(用于清除已持久化的对话记录)；
+/// [buildPrompt] 重新对话时重新生成首轮提示词(含最新农历/季节等信息)。
 class AiResultPage extends StatefulWidget {
   final String? systemPrompt;
   final List<Map<String, String>>? initialMessages;
   final String? pendingUserContent;
   final ValueChanged<List<Map<String, String>>>? onUpdate;
+  final VoidCallback? onClear;
+  final Future<String?> Function()? buildPrompt;
   const AiResultPage({
     super.key,
     this.systemPrompt,
     this.initialMessages,
     this.pendingUserContent,
     this.onUpdate,
+    this.onClear,
+    this.buildPrompt,
   });
 
   @override
@@ -71,12 +77,17 @@ class _AiResultPageState extends State<AiResultPage> {
   bool _loading = false;
   bool _lastFailed = false;
 
+  /// 首轮提示词(重新对话后回填到输入框)
+  String? _originalPrompt;
+
   @override
   void initState() {
     super.initState();
     final pending = widget.pendingUserContent;
     if (pending?.isNotEmpty == true) {
-      _send(pending!);
+      // 不自动发送,先填入输入框,由用户点击发送后开始第一轮
+      _originalPrompt = pending;
+      _controller.text = pending!;
     }
   }
 
@@ -85,6 +96,22 @@ class _AiResultPageState extends State<AiResultPage> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 重新对话:确认后清空当前对话与已持久化记录,用重新生成的首轮提示词回填输入框
+  void _restartConversation() {
+    '确定重新对话吗？'.confirmDialog(() async {
+      // 优先重新生成(含最新农历/季节),旧对话的首条消息可能是旧格式
+      final rebuilt =
+          widget.buildPrompt != null ? await widget.buildPrompt!() : null;
+      _originalPrompt = rebuilt ??
+          _originalPrompt ??
+          _messages.firstWhereOrNull((m) => m['role'] == 'user')?['content'];
+      _messages.clear();
+      _controller.text = _originalPrompt ?? '';
+      setState(() => _lastFailed = false);
+      widget.onClear?.call();
+    }, title: '将清除当前对话记录，并开始一段新对话');
   }
 
   /// 直接复制指定消息内容
@@ -154,6 +181,13 @@ class _AiResultPageState extends State<AiResultPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI解析结果'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.restart_alt),
+            tooltip: '重新对话',
+            onPressed: _restartConversation,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -216,6 +250,10 @@ class _AiResultPageState extends State<AiResultPage> {
                           );
                         }
                         final message = _messages[index];
+                        if (message['role'] == 'system') {
+                          // system提示词只进上下文与持久化,不在界面上渲染
+                          return const SizedBox.shrink();
+                        }
                         final isUser = message['role'] == 'user';
                         final content = message['content'] ?? '';
                         final maxWidth =
@@ -385,18 +423,27 @@ String buildAiUserContent({
   required Yi yi,
   required String date,
   String? question,
+  String? lunarDate,
+  String? season,
 }) {
   final gua = yi.gua();
   final bg =
       question == null || question.trim().isEmpty ? '未提供' : question.trim();
-  return '''请根据以下卦象信息解卦：
+  final buffer = StringBuffer('''请根据以下卦象信息解卦：
 
 - 本卦：${gua[0].name()}
 - 互卦：${gua[1].name()}
 - 变卦：${gua[2].name()}
 - 动爻：${yi.dong}
-- 时间：$date
-- 问事背景：$bg''';
+- 时间：$date''');
+  if (lunarDate?.isNotEmpty == true) {
+    buffer.write('\n- 农历：$lunarDate');
+  }
+  if (season?.isNotEmpty == true) {
+    buffer.write('\n- 季节：$season');
+  }
+  buffer.write('\n- 问事背景：$bg');
+  return buffer.toString();
 }
 
 /// 拼接完整解卦提示词(系统提示词+卦象信息)，供复制使用
@@ -404,7 +451,10 @@ String buildAiPrompt({
   required Yi yi,
   required String date,
   String? question,
+  String? lunarDate,
+  String? season,
 }) {
   return '${buildAiSystemPrompt()}\n\n'
-      '${buildAiUserContent(yi: yi, date: date, question: question)}';
+      '${buildAiUserContent(
+          yi: yi, date: date, question: question, lunarDate: lunarDate, season: season)}';
 }
