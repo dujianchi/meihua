@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/ai_settings.dart';
 import 'package:meihua/entity/yi.dart';
+import 'package:meihua/entity/database/db_ai_chat.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
@@ -247,6 +248,10 @@ class _HistoryState extends State<History> {
       // 其余字段置空,避免已删数据撑大同步文件
       item.tombstone();
       await DbHelper.update(item);
+      // 级联软删:该历史下的AI对话一并转墓碑
+      if (item.id != null) {
+        await DbAiChat.tombstoneByHistory(item.id!);
+      }
 
       setState(() {
         _historyList.removeAt(index);
