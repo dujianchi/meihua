@@ -155,8 +155,18 @@ class _AiResultPageState extends State<AiResultPage> {
     _scrollToBottom();
     try {
       final config = await AiHelper.loadConfig();
-      final result = await AiHelper.chat(config, List.of(_messages));
-      _messages.add({'role': 'assistant', 'content': result});
+      // 只发送 role/content,剔除 reasoning 等仅用于展示的字段
+      final sendable = _messages.map((m) {
+        final role = m['role'] ?? 'user';
+        final content = m['content'] ?? '';
+        return {'role': role, 'content': content};
+      }).toList();
+      final reply = await AiHelper.chat(config, sendable);
+      _messages.add({
+        'role': 'assistant',
+        'content': reply.content,
+        if (reply.reasoning != null) 'reasoning': reply.reasoning!,
+      });
       widget.onUpdate?.call(List.of(_messages));
     } catch (e) {
       if (!mounted) return;
@@ -256,6 +266,7 @@ class _AiResultPageState extends State<AiResultPage> {
                         }
                         final isUser = message['role'] == 'user';
                         final content = message['content'] ?? '';
+                        final reasoning = message['reasoning'];
                         final maxWidth =
                             MediaQuery.sizeOf(context).width * 0.8;
                         final isDark =
@@ -273,19 +284,77 @@ class _AiResultPageState extends State<AiResultPage> {
                                     : Colors.grey.shade200),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: MarkdownBody(
-                            data: content,
-                            styleSheet: MarkdownStyleSheet(
-                              p: TextStyle(
-                                fontSize: 15,
-                                height: 1.5,
-                                color: isUser
-                                    ? Colors.white
-                                    : (isDark
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 思考过程:推理模型有才显示
+                              if (reasoning?.isNotEmpty == true)
+                                Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? Colors.white10
+                                        : Colors.black12,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border(
+                                        left: BorderSide(
+                                            color: isUser
+                                                ? Colors.white38
+                                                : Colors.grey.shade400,
+                                            width: 3)),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '思考过程',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: isUser
+                                              ? Colors.white70
+                                              : (isDark
+                                                  ? Colors.white60
+                                                  : Colors.grey.shade600),
+                                        ),
+                                      ),
+                                      MarkdownBody(
+                                        data: reasoning!,
+                                        styleSheet: MarkdownStyleSheet(
+                                          p: TextStyle(
+                                            fontSize: 13,
+                                            height: 1.4,
+                                            color: isUser
+                                                ? Colors.white70
+                                                : (isDark
+                                                    ? Colors.white60
+                                                    : Colors.grey.shade600),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              MarkdownBody(
+                                data: content,
+                                styleSheet: MarkdownStyleSheet(
+                                  p: TextStyle(
+                                    fontSize: 15,
+                                    height: 1.5,
+                                    color: isUser
                                         ? Colors.white
-                                        : Colors.black87),
+                                        : (isDark
+                                            ? Colors.white
+                                            : Colors.black87),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         );
                         final copyBtn = IconButton(

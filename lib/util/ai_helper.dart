@@ -15,6 +15,13 @@ class AiConfig {
   });
 }
 
+/// AI 回复:正文 + 可选的思考过程(推理模型才有)
+class AiReply {
+  final String content;
+  final String? reasoning;
+  const AiReply({required this.content, this.reasoning});
+}
+
 /// AI 接入助手：配置与调用 OpenAI 兼容的 chat/completions 接口解析卦象
 class AiHelper {
   static const keyEndpoint = 'ai_endpoint';
@@ -53,9 +60,9 @@ class AiHelper {
         : custom;
   }
 
-  /// 调用AI接口（多轮对话，messages 为 {role, content} 历史消息），返回模型回复文本；
+  /// 调用AI接口（多轮对话，messages 为 {role, content} 历史消息），返回模型回复；
   /// 失败抛出带中文说明的异常
-  static Future<String> chat(
+  static Future<AiReply> chat(
       AiConfig config, List<Map<String, String>> messages) async {
     final endpoint = config.endpoint.trim();
     final apiKey = config.apiKey.trim();
@@ -113,7 +120,7 @@ class AiHelper {
   }
 
   /// 解析 chat/completions 响应；格式不对时抛出含原始返回片段的异常
-  static String _parseResponse(dynamic data) {
+  static AiReply _parseResponse(dynamic data) {
     'AI响应: ${_snip('$data')}'.log();
     if (data is! Map) {
       throw Exception('接口返回非JSON格式：${_snip('$data')}');
@@ -126,9 +133,32 @@ class AiHelper {
     final message = choice is Map ? choice['message'] : null;
     final content = message is Map ? message['content'] : null;
     if (content is String && content.trim().isNotEmpty) {
-      return content;
+      return AiReply(
+        content: content,
+        reasoning: _extractReasoning(message),
+      );
     }
     throw Exception('AI返回内容为空：${_snip('$data')}');
+  }
+
+  /// 提取思考过程:兼容 deepseek 的 reasoning_content 与 openai 的 reasoning
+  static String? _extractReasoning(dynamic message) {
+    if (message is! Map) return null;
+    final reasoningContent = message['reasoning_content'];
+    if (reasoningContent is String && reasoningContent.trim().isNotEmpty) {
+      return reasoningContent;
+    }
+    final reasoning = message['reasoning'];
+    if (reasoning is String && reasoning.trim().isNotEmpty) {
+      return reasoning;
+    }
+    if (reasoning is Map) {
+      final content = reasoning['content'];
+      if (content is String && content.trim().isNotEmpty) {
+        return content;
+      }
+    }
+    return null;
   }
 
   /// 截断长文本,便于在错误弹窗中展示
