@@ -111,7 +111,7 @@ class _AiResultPageState extends State<AiResultPage> {
       _controller.text = _originalPrompt ?? '';
       setState(() => _lastFailed = false);
       widget.onClear?.call();
-    }, title: '将清除当前对话记录，并开始一段新对话');
+    }, content: '将清除当前对话记录，并开始一段新对话');
   }
 
   /// 直接复制指定消息内容

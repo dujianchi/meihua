@@ -62,8 +62,7 @@ class _HistoryState extends State<History> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('详细说明:',
-                    style: TextStyle(color: Colors.blueAccent)),
+                const Text('详细说明:', style: TextStyle(color: Colors.blueAccent)),
                 MarkdownBody(
                   data: item.describe!,
                   styleSheet: MarkdownStyleSheet(
@@ -171,17 +170,18 @@ class _HistoryState extends State<History> {
     } else if (index == 1) {
       final configured = await SyncHelper.isConfigured();
       if (configured) {
-        '确认同步(排盘历史+AI对话)吗？'.confirmDialog(() async {
+        '确认同步吗？'.confirmDialog(() async {
           await SyncHelper.sync(false);
           await SyncHelper.syncAiChat(false);
           await _loadData();
           '同步完成'.toast();
-        });
+        }, content: '同步将同时排盘历史和AI对话');
       } else {
         _actionSelected(2);
       }
     } else if (index == 2) {
-      final (oldServerUrl, oldAccount, oldPassword) =          await SyncHelper.getWebDavConf();
+      final (oldServerUrl, oldAccount, oldPassword) =
+          await SyncHelper.getWebDavConf();
       final etServer = EditText(
             label: '服务器地址',
             defaultStr: oldServerUrl ?? 'https://dav.jianguoyun.com/dav/',
@@ -213,7 +213,7 @@ class _HistoryState extends State<History> {
                     await SyncHelper.forceSyncAiChat();
                     await _loadData();
                     Get.until((route) => Get.isDialogOpen != true);
-                  }, title: '确定以本地数据覆盖云端数据吗？');
+                  }, content: '确定以本地数据覆盖云端数据吗？');
                 },
                 child: const Text('覆盖云端数据',
                     style: TextStyle(color: Colors.redAccent))),
@@ -243,10 +243,9 @@ class _HistoryState extends State<History> {
   void _delete(DbHistory item, int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
     '删除'.confirmDialog(() async {
-      // 软删:保留记录但标记 deleted=1 并刷新 updateTime,
-      // 同步时这条"已删除"快照会比远端旧版本新,从而把删除传播到其它设备
-      item.deleted = 1;
-      item.touch();
+      // 软删+瘦身:保留墓碑(sync_hash/update_time/deleted)以传播删除,
+      // 其余字段置空,避免已删数据撑大同步文件
+      item.tombstone();
       await DbHelper.update(item);
 
       setState(() {
@@ -255,7 +254,7 @@ class _HistoryState extends State<History> {
       Get.until((route) => Get.isDialogOpen != true);
       '删除成功'.toast();
       SyncHelper.scheduleAutoSync();
-    }, title: '确定删除${item.title}吗');
+    }, content: '确定删除${item.title}吗');
   }
 
   void _edit(DbHistory item) {

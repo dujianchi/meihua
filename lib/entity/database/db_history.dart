@@ -87,4 +87,18 @@ class DbHistory extends Base {
   void touch() {
     updateTime = DateTime.now().millisecondsSinceEpoch;
   }
+
+  /// 软删并瘦身:仅保留同步所需字段(sync_hash/update_time/deleted/save_date),
+  /// 其余置空,避免已删数据撑大同步文件
+  void tombstone() {
+    deleted = 1;
+    touch();
+    lunarDate = null;
+    title = null;
+    describe = null;
+    aiMessages = null;
+    shang = null;
+    xia = null;
+    bian = null;
+  }
 }

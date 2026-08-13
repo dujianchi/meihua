@@ -109,12 +109,12 @@ extension StringExtNullable on String? {
   bool get isNotBlank => !isBlank;
 
   void confirmDialog(Future<dynamic> Function() onPressed,
-      {String? title, String? cancel, String? confirm}) {
+      {String? content, String? cancel, String? confirm}) {
     if (isBlank) return;
     Get.generalDialog(
       pageBuilder: (context, animation1, animation2) => AlertDialog(
         title: Text(this!),
-        content: Visibility(visible: title.isNotBlank, child: Text('$title')),
+        content: Visibility(visible: content.isNotBlank, child: Text('$content')),
         actions: [
           TextButton(
             onPressed: () {

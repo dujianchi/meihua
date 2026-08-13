@@ -225,8 +225,7 @@ class _PanState extends State<_Pan> {
     final chat = _aiChat;
     if (chat?.id != null) {
       final tomb = DbAiChat()..fromMap(chat!.toMap());
-      tomb.deleted = 1;
-      tomb.touch();
+      tomb.tombstone();
       await DbHelper.update(tomb);
       SyncHelper.scheduleAutoSync();
     }
@@ -436,8 +435,8 @@ class _PanState extends State<_Pan> {
                     child: const Text('取消')),
                 TextButton(
                     onPressed: () async {
-                      dhitory.deleted = 1;
-                      dhitory.touch();
+                      // 软删+瘦身:保留墓碑(sync_hash/update_time/deleted)以传播删除
+                      dhitory.tombstone();
                       await DbHelper.update(dhitory);
                       // 先关掉确认弹窗,再弹出 pan 页(直到当前路由不是 pan)
                       Get.until((route) => Get.isDialogOpen != true);
