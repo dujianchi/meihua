@@ -158,19 +158,6 @@ class _PanState extends State<_Pan> {
         : null;
     _aiChat = chat;
     _aiMessages = chat == null ? null : _decodeAiMessages(chat.messages);
-    // 兼容旧数据:老历史记录里遗留的 ai_messages 迁移成一段新对话
-    if (chat == null && dhitory.aiMessages?.isNotEmpty == true) {
-      final legacy = DbAiChat()
-        ..historyId = historyId
-        ..shang = yi.shang
-        ..xia = yi.xia
-        ..bian = yi.dong
-        ..messages = dhitory.aiMessages
-        ..touch();
-      legacy.id = await DbHelper.save(legacy);
-      _aiChat = legacy;
-      _aiMessages = _decodeAiMessages(legacy.messages);
-    }
   }
 
   /// 解析对话JSON;损坏或空返回null

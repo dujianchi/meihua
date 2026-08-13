@@ -214,13 +214,20 @@ class SyncHelper {
     });
   }
 
-  /// 修复历史遗留:旧版本落盘时 syncHash 可能为 null,补算并刷新 updateTime,
-  /// 使其能正常参与快照合并(否则会被 _mergeSnapshots 跳过,导致漏推/重复)。
+  /// 修复历史遗留:
+  /// 1. 旧版本落盘时 syncHash 可能为 null,补算并刷新 updateTime,
+  ///    使其能正常参与快照合并(否则会被 _mergeSnapshots 跳过,导致漏推/重复)。
+  /// 2. 存量已删除记录(旧版本删除未瘦身)执行一次性瘦身迁移:
+  ///    保留墓碑字段、清空其余,不刷新 updateTime,不破坏 LWW。
   static Future<void> _normalizeLocal(List<DbHistory> localList) async {
     for (final h in localList) {
       if (h.syncHash == null || h.syncHash!.isEmpty) {
         h.ensureSyncHash();
         h.touch();
+        await DbHelper.save(h);
+      }
+      if (h.deleted == 1 && !h.isStrippedTombstone) {
+        h.tombstone(touch: false);
         await DbHelper.save(h);
       }
     }
@@ -238,12 +245,13 @@ class SyncHelper {
     return candidate.deleted == 1 && prev.deleted != 1;
   }
 
-  /// 按 syncHash 合并两端快照,相同 key 取 update_time 新者,平局墓碑胜
-  /// 返回克隆后的新对象,与入参列表完全独立,避免 Hive frame 缓存引用问题
+  /// 按 syncHash 合并两端快照,相同 key 取 update_time 新者,平局墓碑胜。
+  /// 迭代顺序 本地在前:平局(同时间戳)时保留本地版本——
+  /// 本地已做墓碑瘦身迁移,可把精简版写回远端,逐步压缩远端同步文件
   static List<DbHistory> _mergeSnapshots(
       List<DbHistory> remote, List<DbHistory> local) {
     final byHash = <String, DbHistory>{};
-    for (final h in [...remote, ...local]) {
+    for (final h in [...local, ...remote]) {
       final key = h.syncHash;
       if (key == null || key.isEmpty) continue;
       final prev = byHash[key];
@@ -403,12 +411,16 @@ class SyncHelper {
     }
   }
 
-  /// 修复历史遗留:syncHash 为空补算
+  /// 修复历史遗留:syncHash 为空补算;存量已删除记录做一次性瘦身迁移
   static Future<void> _normalizeAiChatLocal(List<DbAiChat> localList) async {
     for (final h in localList) {
       if (h.syncHash == null || h.syncHash!.isEmpty) {
         h.ensureSyncHash();
         h.touch();
+        await DbHelper.save(h);
+      }
+      if (h.deleted == 1 && !h.isStrippedTombstone) {
+        h.tombstone(touch: false);
         await DbHelper.save(h);
       }
     }
@@ -425,7 +437,7 @@ class SyncHelper {
   static List<DbAiChat> _mergeAiChatSnapshots(
       List<DbAiChat> remote, List<DbAiChat> local) {
     final byHash = <String, DbAiChat>{};
-    for (final h in [...remote, ...local]) {
+    for (final h in [...local, ...remote]) {
       final key = h.syncHash;
       if (key == null || key.isEmpty) continue;
       final prev = byHash[key];

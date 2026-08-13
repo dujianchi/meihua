@@ -105,8 +105,6 @@ types:
         index: 9
       deleted:
         index: 10
-      aiMessages:
-        index: 11
   DbHistorySync:
     typeId: 4
     nextIndex: 7

@@ -213,14 +213,13 @@ class DbHistoryAdapter extends TypeAdapter<DbHistory> {
       ..describe = fields[7] as String?
       ..syncHash = fields[8] as String?
       ..updateTime = (fields[9] as num?)?.toInt()
-      ..deleted = (fields[10] as num?)?.toInt()
-      ..aiMessages = fields[11] as String?;
+      ..deleted = (fields[10] as num?)?.toInt();
   }
 
   @override
   void write(BinaryWriter writer, DbHistory obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -242,9 +241,7 @@ class DbHistoryAdapter extends TypeAdapter<DbHistory> {
       ..writeByte(9)
       ..write(obj.updateTime)
       ..writeByte(10)
-      ..write(obj.deleted)
-      ..writeByte(11)
-      ..write(obj.aiMessages);
+      ..write(obj.deleted);
   }
 
   @override

@@ -72,14 +72,18 @@ class DbAiChat extends Base {
   }
 
   /// 软删并瘦身:仅保留同步所需字段(sync_hash/update_time/deleted),其余置空,
-  /// 避免已删对话的完整内容撑大同步文件
-  void tombstone() {
+  /// 避免已删对话的完整内容撑大同步文件。touch=false 用于存量墓碑迁移,
+  /// 不刷新版本号,避免破坏 last-write-wins 语义
+  void tombstone({bool touch = true}) {
     deleted = 1;
-    touch();
+    if (touch) this.touch();
     historyId = null;
     shang = null;
     xia = null;
     bian = null;
     messages = null;
   }
+
+  /// 是否已是精简墓碑(用于迁移时跳过已瘦身的记录)
+  bool get isStrippedTombstone => deleted == 1 && messages == null;
 }
