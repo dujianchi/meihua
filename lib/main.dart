@@ -52,6 +52,9 @@ void main() async {
   await Hive.openBox<DbHistorySync>(DbHistorySync.nameDb);
   await Hive.openBox<DbAiChat>(DbAiChat.nameDb);
   DbHelper.initDataIfNeed();
+  // 清理孤儿对话:仅旧版本遗留数据需要,版本标记保证只跑一次(随下个版本删除)
+  // ignore: deprecated_member_use
+  DbAiChat.cleanupOrphans();
   runApp(MyApp());
 }
 

@@ -1,5 +1,9 @@
 import 'package:meihua/entity/database/base.dart';
+import 'package:meihua/entity/database/db_history.dart';
+import 'package:meihua/util/config_helper.dart';
+import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
+import 'package:meihua/util/sync_helper.dart';
 
 /// AI对话记录:每个卦(或已保存的排盘历史)一条,实时保存。
 /// 通过 historyId 关联已保存的排盘历史;未保存时 historyId 为空,
@@ -86,4 +90,62 @@ class DbAiChat extends Base {
 
   /// 是否已是精简墓碑(用于迁移时跳过已瘦身的记录)
   bool get isStrippedTombstone => deleted == 1 && messages == null;
+
+  /// 级联软删:该排盘历史下的所有对话一并转墓碑(删除历史时调用)
+  static Future<void> tombstoneByHistory(int historyId) async {
+    final chats = (await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
+            (ls) =>
+                ls?.where((t) => t.historyId == historyId && t.deleted != 1)))
+        ?.toList() ??
+        <DbAiChat>[];
+    for (final c in chats) {
+      final tomb = DbAiChat()..fromMap(c.toMap());
+      tomb.tombstone();
+      await DbHelper.update(tomb);
+    }
+  }
+
+  /// 孤儿数据清理:孤儿数据仅在旧版本(未自动保存历史/未级联删除)产生,
+  /// 新版本不会再产生,因此用版本标记保证只执行一次。
+  /// 废弃:仅用于一次性迁移,随下个版本删除
+  @Deprecated('仅用于清理旧版本遗留的孤儿数据,可随下个版本一并删除')
+  static const orphanCleanupVersion = 'v1';
+  static const _keyCleanupDone = 'ai_chat_cleanup_done';
+
+  /// 清理孤儿对话:historyId 为空、或指向已删除排盘历史的对话转墓碑。
+  /// 版本等于 [orphanCleanupVersion] 才执行,执行后记录版本标记,不再重复扫描。
+  /// 废弃:仅用于清理旧版本遗留的孤儿数据,随下个版本删除
+  @Deprecated('仅用于清理旧版本遗留的孤儿数据,可随下个版本一并删除')
+  static Future<void> cleanupOrphans() async {
+    if (await ConfigHelper.getConfig(_keyCleanupDone) == orphanCleanupVersion) {
+      return;
+    }
+    final chats = (await DbHelper.query<DbAiChat>(DbAiChat.nameDb))?.toList() ??
+        <DbAiChat>[];
+    if (chats.isEmpty) {
+      await ConfigHelper.saveConfig(_keyCleanupDone, orphanCleanupVersion);
+      return;
+    }
+    final histories = (await DbHelper.query<DbHistory>(DbHistory.nameDb))
+            ?.toList() ??
+        <DbHistory>[];
+    final historyById = {for (final h in histories) h.id: h};
+    var cleaned = false;
+    for (final c in chats) {
+      if (c.deleted == 1) continue;
+      final history = c.historyId == null ? null : historyById[c.historyId];
+      final orphan =
+          c.historyId == null || (history != null && history.deleted == 1);
+      if (orphan) {
+        final tomb = DbAiChat()..fromMap(c.toMap());
+        tomb.tombstone();
+        await DbHelper.update(tomb);
+        cleaned = true;
+      }
+    }
+    if (cleaned) {
+      SyncHelper.scheduleAutoSync();
+    }
+    await ConfigHelper.saveConfig(_keyCleanupDone, orphanCleanupVersion);
+  }
 }

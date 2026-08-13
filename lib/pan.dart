@@ -425,6 +425,10 @@ class _PanState extends State<_Pan> {
                       // 软删+瘦身:保留墓碑(sync_hash/update_time/deleted)以传播删除
                       dhitory.tombstone();
                       await DbHelper.update(dhitory);
+                      // 级联软删:该历史下的AI对话一并转墓碑
+                      if (dhitory.id != null) {
+                        await DbAiChat.tombstoneByHistory(dhitory.id!);
+                      }
                       // 先关掉确认弹窗,再弹出 pan 页(直到当前路由不是 pan)
                       Get.until((route) => Get.isDialogOpen != true);
                       Get.until((route) => route.settings.name != 'pan');
