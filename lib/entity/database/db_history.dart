@@ -15,8 +15,6 @@ class DbHistory extends Base {
   /// 软删标记:0/空=正常,1=已删除(列表不展示,但快照里保留以传播删除)
   int? deleted;
   String? lunarDate, title, describe, syncHash;
-  /// AI解析对话记录(JSON字符串, [{role, content}...]),随记录同步,不影响 syncHash
-  String? aiMessages;
 
   @override
   void fromMap(Map<String, dynamic> map) {
@@ -31,7 +29,6 @@ class DbHistory extends Base {
     syncHash = map['sync_hash'];
     updateTime = map['update_time'];
     deleted = map['deleted'];
-    aiMessages = map['ai_messages'];
   }
 
   @override
@@ -49,7 +46,6 @@ class DbHistory extends Base {
     map['sync_hash'] = syncHash;
     map['update_time'] = updateTime;
     map['deleted'] = deleted;
-    map['ai_messages'] = aiMessages;
     return map;
   }
 
@@ -89,16 +85,25 @@ class DbHistory extends Base {
   }
 
   /// 软删并瘦身:仅保留同步所需字段(sync_hash/update_time/deleted/save_date),
-  /// 其余置空,避免已删数据撑大同步文件
-  void tombstone() {
+  /// 其余置空,避免已删数据撑大同步文件。touch=false 用于存量墓碑迁移,
+  /// 不刷新版本号,避免破坏 last-write-wins 语义
+  void tombstone({bool touch = true}) {
     deleted = 1;
-    touch();
+    if (touch) this.touch();
     lunarDate = null;
     title = null;
     describe = null;
-    aiMessages = null;
     shang = null;
     xia = null;
     bian = null;
   }
+
+  /// 是否已是精简墓碑(用于迁移时跳过已瘦身的记录)
+  bool get isStrippedTombstone =>
+      deleted == 1 &&
+      title == null &&
+      describe == null &&
+      shang == null &&
+      xia == null &&
+      bian == null;
 }
