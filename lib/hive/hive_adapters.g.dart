@@ -326,13 +326,15 @@ class DbAiChatAdapter extends TypeAdapter<DbAiChat> {
       ..xia = (fields[3] as num?)?.toInt()
       ..bian = (fields[4] as num?)?.toInt()
       ..messages = fields[5] as String?
-      ..updateTime = (fields[6] as num?)?.toInt();
+      ..updateTime = (fields[6] as num?)?.toInt()
+      ..syncHash = fields[7] as String?
+      ..deleted = (fields[8] as num?)?.toInt();
   }
 
   @override
   void write(BinaryWriter writer, DbAiChat obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -346,7 +348,11 @@ class DbAiChatAdapter extends TypeAdapter<DbAiChat> {
       ..writeByte(5)
       ..write(obj.messages)
       ..writeByte(6)
-      ..write(obj.updateTime);
+      ..write(obj.updateTime)
+      ..writeByte(7)
+      ..write(obj.syncHash)
+      ..writeByte(8)
+      ..write(obj.deleted);
   }
 
   @override

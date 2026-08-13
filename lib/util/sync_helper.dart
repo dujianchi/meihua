@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:meihua/entity/database/db_ai_chat.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/entity/database/db_history_sync.dart';
 import 'package:meihua/util/config_helper.dart';
@@ -206,6 +207,7 @@ class SyncHelper {
       _autoSyncTimer = null;
       try {
         await sync(false);
+        await syncAiChat(false);
       } catch (ex) {
         ex.log('auto sync error: ');
       }
@@ -313,5 +315,152 @@ class SyncHelper {
       }
     }
     return byHash.values.toList();
+  }
+
+  // ==================== AI对话同步(独立文件,不掺和排盘历史) ====================
+
+  static const _aiDir = '/meihua',
+      _aiLock = '$_aiDir/ai_chat.lock',
+      _aiJson = '$_aiDir/ai_chat.json',
+      _lockDays = 24 * 60 * 60 * 1000;
+
+  /// AI对话同步:与排盘历史同模型(快照+LWW+墓碑),但使用独立的同步文件与锁
+  static Future<void> syncAiChat([bool toast = true]) async {
+    var acquired = false;
+    try {
+      if (await _getSyncClient() == null) {
+        if (toast) '对话同步失败：无法连接 WebDAV'.toast();
+        return;
+      }
+      await _createDir(_aiDir);
+      final lockStr = await _getContent(_aiLock);
+      if (lockStr.isBlank ||
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= _lockDays) {
+        await _write(_aiLock, '${DateTime.now().millisecondsSinceEpoch}');
+        acquired = true;
+        final remoteList = await _readAiChatSnapshot(_aiJson);
+        final rawList =
+            (await DbHelper.query<DbAiChat>(DbAiChat.nameDb))?.toList() ?? [];
+        final localList =
+            rawList.map((h) => DbAiChat()..fromMap(h.toMap())).toList();
+        await _normalizeAiChatLocal(localList);
+        final merged = _mergeAiChatSnapshots(remoteList, localList);
+        await _applyAiChatToLocal(merged, localList);
+        final clean = merged
+            .map((h) => h.toMap())
+            .where((m) => m['sync_hash'] != null)
+            .toList();
+        await _write(_aiJson, clean.toJson());
+        if (toast) '对话同步完成'.toast();
+      } else {
+        '对话同步跳过：另一设备正在同步,请稍后再试'.toast(5);
+      }
+    } catch (ex) {
+      ex.log('ai chat sync error: $ex');
+      if (toast) '对话同步失败：$ex'.toast();
+    } finally {
+      if (acquired) {
+        await _write(_aiLock, '');
+      }
+    }
+  }
+
+  /// AI对话强制同步:本地整份快照直接覆盖远端
+  static Future<void> forceSyncAiChat() async {
+    var acquired = false;
+    try {
+      if (await _getSyncClient() == null) {
+        '对话同步失败：无法连接 WebDAV'.toast();
+        return;
+      }
+      await _createDir(_aiDir);
+      final lockStr = await _getContent(_aiLock);
+      if (lockStr.isBlank ||
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= _lockDays) {
+        await _write(_aiLock, '${DateTime.now().millisecondsSinceEpoch}');
+        acquired = true;
+        final rawList =
+            (await DbHelper.query<DbAiChat>(DbAiChat.nameDb))?.toList() ?? [];
+        final localList =
+            rawList.map((h) => DbAiChat()..fromMap(h.toMap())).toList();
+        await _normalizeAiChatLocal(localList);
+        final clean = localList
+            .map((h) => h.toMap())
+            .where((m) => m['sync_hash'] != null)
+            .toList();
+        await _write(_aiJson, clean.toJson());
+        '对话同步完成'.toast();
+      } else {
+        '对话同步跳过：另一设备正在同步,请稍后再试'.toast(5);
+      }
+    } catch (ex) {
+      ex.log('ai chat sync error: $ex');
+      '对话同步失败：$ex'.toast();
+    } finally {
+      if (acquired) {
+        await _write(_aiLock, '');
+      }
+    }
+  }
+
+  /// 修复历史遗留:syncHash 为空补算
+  static Future<void> _normalizeAiChatLocal(List<DbAiChat> localList) async {
+    for (final h in localList) {
+      if (h.syncHash == null || h.syncHash!.isEmpty) {
+        h.ensureSyncHash();
+        h.touch();
+        await DbHelper.save(h);
+      }
+    }
+  }
+
+  static int _tsChat(DbAiChat h) => h.updateTime ?? 0;
+
+  static bool _shouldReplaceChat(DbAiChat candidate, DbAiChat prev) {
+    final tc = _tsChat(candidate), tp = _tsChat(prev);
+    if (tc != tp) return tc > tp;
+    return candidate.deleted == 1 && prev.deleted != 1;
+  }
+
+  static List<DbAiChat> _mergeAiChatSnapshots(
+      List<DbAiChat> remote, List<DbAiChat> local) {
+    final byHash = <String, DbAiChat>{};
+    for (final h in [...remote, ...local]) {
+      final key = h.syncHash;
+      if (key == null || key.isEmpty) continue;
+      final prev = byHash[key];
+      if (prev == null || _shouldReplaceChat(h, prev)) {
+        byHash[key] = DbAiChat()..fromMap(h.toMap());
+      }
+    }
+    return byHash.values.toList();
+  }
+
+  static Future<void> _applyAiChatToLocal(
+      List<DbAiChat> merged, List<DbAiChat> local) async {
+    final localByHash = {for (var h in local) h.syncHash: h};
+    for (final m in merged) {
+      final key = m.syncHash;
+      if (key == null || key.isEmpty) continue;
+      final existing = localByHash[key];
+      if (existing == null) {
+        final dh = DbAiChat()..fromMap(m.toMap());
+        dh.id = null;
+        await DbHelper.save(dh);
+      } else if (_shouldReplaceChat(m, existing)) {
+        final dh = DbAiChat()..fromMap(m.toMap());
+        dh.id = existing.id;
+        await DbHelper.save(dh);
+      }
+    }
+  }
+
+  static Future<List<DbAiChat>> _readAiChatSnapshot(String json) async {
+    final jsonStr = await _getContent(json);
+    if (jsonStr.isBlank) return [];
+    final arr = jsonDecode(jsonStr) as List<dynamic>;
+    return arr
+        .map((e) => DbAiChat()..fromMap(e as Map<String, dynamic>))
+        .toList();
   }
 }
