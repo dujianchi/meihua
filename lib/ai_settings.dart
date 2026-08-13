@@ -28,12 +28,13 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
   }
 
   Future<void> _save(String? endpoint, String? apiKey, String? model,
-      String? customPrompt) async {
+      String? customPrompt, String? systemPrompt) async {
     await AiHelper.saveConfig(
       endpoint: endpoint,
       apiKey: apiKey,
       model: model,
       customPrompt: customPrompt,
+      systemPrompt: systemPrompt,
     );
     '保存成功'.toast();
   }
@@ -64,6 +65,11 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
       defaultStr: config.customPrompt,
       maxLines: 6,
     );
+    final systemPrompt = EditText(
+      label: '系统提示词',
+      defaultStr: config.systemPrompt,
+      maxLines: 12,
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI设置'),
@@ -74,6 +80,7 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
               apiKey.trim(),
               model.trim(),
               prompt.text(),
+              systemPrompt.text(),
             ),
             child: const Text('保存'),
           ),
@@ -90,6 +97,13 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
             model,
             const SizedBox(height: 12),
             prompt,
+            const SizedBox(height: 12),
+            systemPrompt,
+            const SizedBox(height: 8),
+            const Text(
+              '系统提示词：设定AI角色、解卦要求与输出格式，留空则使用默认值；修改后无需重新打包，下次对话生效。',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             const SizedBox(height: 8),
             const Text(
               '自定义提示词：留空则使用默认解卦提示词；填写则替换默认提示词作为发送给AI的用户消息。'

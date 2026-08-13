@@ -171,10 +171,12 @@ class _HistoryState extends State<History> {
     } else if (index == 1) {
       final configured = await SyncHelper.isConfigured();
       if (configured) {
-        '确认同步'.confirmDialog(() async {
-          await SyncHelper.sync();
+        '确认同步(排盘历史+AI对话)吗？'.confirmDialog(() async {
+          await SyncHelper.sync(false);
+          await SyncHelper.syncAiChat(false);
           await _loadData();
-        }, title: '确认同步吗？');
+          '同步完成'.toast();
+        });
       } else {
         _actionSelected(2);
       }
@@ -208,6 +210,7 @@ class _HistoryState extends State<History> {
                 onPressed: () async {
                   '覆盖同步'.confirmDialog(() async {
                     await SyncHelper.forceSync();
+                    await SyncHelper.forceSyncAiChat();
                     await _loadData();
                     Get.until((route) => Get.isDialogOpen != true);
                   }, title: '确定以本地数据覆盖云端数据吗？');

@@ -140,13 +140,14 @@ class _PanState extends State<_Pan> {
     final historyId = yi.historyId;
     Iterable<DbAiChat>? rows;
     if (historyId != null) {
-      rows = await DbHelper.query<DbAiChat>(
-          DbAiChat.nameDb, (ls) => ls?.where((t) => t.historyId == historyId));
+      rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
+          (ls) => ls?.where((t) => t.historyId == historyId && t.deleted != 1));
     } else {
       rows = await DbHelper.query<DbAiChat>(
           DbAiChat.nameDb,
           (ls) => ls?.where((t) =>
               t.historyId == null &&
+              t.deleted != 1 &&
               t.shang == yi.shang &&
               t.xia == yi.xia &&
               t.bian == yi.dong));
@@ -186,7 +187,8 @@ class _PanState extends State<_Pan> {
     }
   }
 
-  /// AI对话更新回调:实时写入对话表(不参与同步)。对话始终关联一条排盘历史
+  /// AI对话更新回调:实时写入对话表(参与独立的对话同步)。
+  /// 对话始终关联一条排盘历史
   Future<void> _onAiMessagesUpdate(List<Map<String, String>> messages) async {
     _aiMessages = messages;
     final yi = widget.yi;
@@ -198,6 +200,7 @@ class _PanState extends State<_Pan> {
     chat.messages = jsonEncode(messages);
     chat.touch();
     await DbHelper.save(chat);
+    SyncHelper.scheduleAutoSync();
   }
 
   /// 重新生成首轮提示词(含最新农历/季节),供聊天页"重新对话"使用
@@ -217,11 +220,15 @@ class _PanState extends State<_Pan> {
         ));
   }
 
-  /// 重新对话确认后:删除已持久化的对话记录,等待新对话重新写入
+  /// 重新对话确认后:软删当前对话(墓碑随同步传播),等待新对话重新写入
   Future<void> _onAiChatClear() async {
     final chat = _aiChat;
     if (chat?.id != null) {
-      await DbHelper.delete(DbAiChat.nameDb, (t) => t.id == chat!.id);
+      final tomb = DbAiChat()..fromMap(chat!.toMap());
+      tomb.deleted = 1;
+      tomb.touch();
+      await DbHelper.update(tomb);
+      SyncHelper.scheduleAutoSync();
     }
     _aiChat = null;
     _aiMessages = null;
@@ -476,10 +483,11 @@ class _PanState extends State<_Pan> {
                     },
                     child: const Text('直接提问')),
                 TextButton(
-                    onPressed: () {
+                    onPressed: () async {
                       final q = question.text();
                       Get.until((route) => Get.isDialogOpen != true);
                       final castTime = _castTime;
+                      final config = await AiHelper.loadConfig();
                       final prompt = buildAiPrompt(
                         yi: yi,
                         date: castTime.millisecondsSinceEpoch.dateStr(),
@@ -487,6 +495,7 @@ class _PanState extends State<_Pan> {
                         lunarDate:
                             dhitory.lunarDate ?? castTime.toLunar().niceStr(),
                         season: castTime.toLunar().seasion,
+                        systemPrompt: config.systemPrompt,
                       );
                       Get.to(() => AiPromptPage(prompt: prompt));
                     },
@@ -513,7 +522,8 @@ class _PanState extends State<_Pan> {
   Future<void> _aiAsk(Yi yi, String question) async {
     await _loadAiChat();
     if (dhitory.id == null) await _autoSaveHistory(question);
-    final systemPrompt = buildAiSystemPrompt();
+    final config = await AiHelper.loadConfig();
+    final systemPrompt = config.systemPrompt;
     final messages = _aiMessages;
     if (messages.isNoneEmpty) {
       // 旧数据遗留的未关联对话,顺手挂到新保存的排盘历史下
@@ -531,7 +541,6 @@ class _PanState extends State<_Pan> {
           ));
       return;
     }
-    final config = await AiHelper.loadConfig();
     final castTime = _castTime;
     final content = AiHelper.buildUserContent(
         config,
