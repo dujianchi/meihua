@@ -523,14 +523,16 @@ class SyncHelper {
         acquired = true;
         final remote = await _readAiConfigRemote();
         final localMap = await _localAiConfigMap();
-        final localTime = (await ConfigHelper.getConfig(AiHelper.keyUpdateTime)).toInt();
+        final localTime =
+            (await ConfigHelper.getConfig(AiHelper.keyUpdateTime)).toInt();
         final remoteTime = (remote?['update_time'] as num?)?.toInt() ?? 0;
-        if (remote == null || localMap.isEmpty || localTime >= remoteTime) {
-          // 本地为准(或远端为空/本地无配置时兜底):整份覆盖远端
-          final payload = <String, dynamic>{...localMap, 'update_time': localTime};
-          await _write(_aiConfJson, payload.toJson());
-        } else {
-          // 远端较新:覆盖本地配置
+        // 远端存在且(本地无配置 或 远端更新) → 远端胜;否则本地胜。
+        // 注意:本地无配置时必须远端胜,否则空配置会覆盖远端并把 update_time
+        // 打成 0,导致后续所有设备 0>=0 永远本地胜、互相覆盖不了
+        final remoteWins =
+            remote != null && (localMap.isEmpty || localTime < remoteTime);
+        if (remoteWins) {
+          // 远端为准:覆盖本地配置,并同步时间戳
           for (final key in AiHelper.configKeys) {
             final val = remote[key];
             if (val is String && val.isNotEmpty) {
@@ -538,6 +540,16 @@ class SyncHelper {
             }
           }
           await ConfigHelper.saveConfig(AiHelper.keyUpdateTime, '$remoteTime');
+        } else {
+          // 本地为准:整份覆盖远端。本地无配置(远端也空)时写空壳;
+          // 本地有配置但缺时间戳(被 0 污染的旧文件)时补记当前时间,顺带修复
+          final ts = localMap.isEmpty
+              ? 0
+              : (localTime > 0
+                  ? localTime
+                  : DateTime.now().millisecondsSinceEpoch);
+          final payload = <String, dynamic>{...localMap, 'update_time': ts};
+          await _write(_aiConfJson, payload.toJson());
         }
         if (toast) 'AI设置同步完成'.toast();
       } else {
