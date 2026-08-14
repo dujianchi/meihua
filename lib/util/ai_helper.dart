@@ -31,6 +31,18 @@ class AiHelper {
   static const keyPrompt = 'ai_prompt';
   static const keySystemPrompt = 'ai_system_prompt';
 
+  /// AI配置的版本时间戳(配置表键):保存配置时刷新,同步时新者胜
+  static const keyUpdateTime = 'ai_config_update_time';
+
+  /// 参与同步的配置键(不含版本时间戳 keyUpdateTime)
+  static const configKeys = [
+    keyEndpoint,
+    keyKey,
+    keyModel,
+    keyPrompt,
+    keySystemPrompt,
+  ];
+
   /// 默认系统提示词(可在AI设置页修改,无需重新打包)
   static const defaultSystemPrompt = '''
 你是一位精通梅花易数、五行、周易、天人感应等等中国传统易学思想的预测师，请按照以下规则，根据用户提供的卦象信息解卦。
@@ -136,6 +148,9 @@ class AiHelper {
     await ConfigHelper.saveConfig(keyModel, model);
     await ConfigHelper.saveConfig(keyPrompt, customPrompt);
     await ConfigHelper.saveConfig(keySystemPrompt, systemPrompt);
+    // 刷新配置版本时间戳,供AI设置同步以"新覆盖旧"
+    await ConfigHelper.saveConfig(
+        keyUpdateTime, '${DateTime.now().millisecondsSinceEpoch}');
   }
 
   /// 拼接发给AI的用户消息：自定义提示词优先，{卦象}占位符会被替换为默认提示词内容

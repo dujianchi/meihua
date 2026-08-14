@@ -141,6 +141,11 @@ class _HistoryState extends State<History> {
       appBar: AppBar(
         title: const Text('排盘历史'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: '搜索排盘历史',
+            onPressed: () => Get.to(() => const HistorySearchPage()),
+          ),
           PopupMenuButton(
             itemBuilder: (context) => [
               //PopupMenuItem(value: 0, child: Text(_showAll ? '隐藏全部' : '显示全部')),
@@ -174,9 +179,10 @@ class _HistoryState extends State<History> {
         '确认同步吗？'.confirmDialog(() async {
           await SyncHelper.sync(false);
           await SyncHelper.syncAiChat(false);
+          await SyncHelper.syncAiConfig(false);
           await _loadData();
           '同步完成'.toast();
-        }, content: '同步将同时排盘历史和AI对话');
+        }, content: '同步将同时排盘历史、AI对话和AI设置');
       } else {
         _actionSelected(2);
       }
@@ -212,6 +218,7 @@ class _HistoryState extends State<History> {
                   '覆盖同步'.confirmDialog(() async {
                     await SyncHelper.forceSync();
                     await SyncHelper.forceSyncAiChat();
+                    await SyncHelper.forceSyncAiConfig();
                     await _loadData();
                     Get.until((route) => Get.isDialogOpen != true);
                   }, content: '确定以本地数据覆盖云端数据吗？');
@@ -337,5 +344,91 @@ class _HistoryState extends State<History> {
     } else {
       setState(() {});
     }
+  }
+}
+
+/// 排盘历史搜索页:按标题/详细说明关键字搜索,点击跳转到对应排盘
+class HistorySearchPage extends StatefulWidget {
+  const HistorySearchPage({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _HistorySearchPageState();
+}
+
+class _HistorySearchPageState extends State<HistorySearchPage> {
+  final _ctrl = TextEditingController();
+  var _results = <DbHistory>[];
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String keyword) async {
+    final kw = keyword.trim();
+    final raw = (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ??
+        <DbHistory>[];
+    raw.removeWhere((h) => h.deleted == 1);
+    if (kw.isNotEmpty) {
+      raw.removeWhere((h) =>
+          h.title?.contains(kw) != true && h.describe?.contains(kw) != true);
+    }
+    raw.sort((a, b) => b.saveDate?.compareTo(a.saveDate ?? 0) ?? 0);
+    if (mounted) {
+      setState(() => _results = raw);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: TextField(
+          controller: _ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '搜索标题或详细说明…',
+            border: InputBorder.none,
+          ),
+          onChanged: _search,
+        ),
+      ),
+      body: SafeArea(
+        child: _results.isEmpty
+            ? const Center(
+                child: Text('未找到相关记录',
+                    style: TextStyle(color: Colors.grey)))
+            : ListView.separated(
+                itemBuilder: (context, index) {
+                  final item = _results[index];
+                  return ListTile(
+                    title: Text(item.title ?? ''),
+                    subtitle: Text(
+                        '${item.shang!.baGua().name} ${item.xia!.baGua().name} 变爻${item.bian!.yao()} '
+                        '${item.saveDate.dateStr()}'),
+                    onTap: () {
+                      Get.toNamed(
+                        'pan',
+                        arguments: Yi(
+                          shang: item.shang! == 0 ? 8 : item.shang!,
+                          xia: item.xia! == 0 ? 8 : item.xia!,
+                          dong: item.bian! == 0 ? 6 : item.bian!,
+                          historyDate:
+                              '${item.saveDate.dateStr()}\n(${item.lunarDate})',
+                          historyId: item.id,
+                        ),
+                      );
+                    },
+                  );
+                },
+                separatorBuilder: (context, index) => const Divider(
+                  thickness: 0,
+                  height: 0.1,
+                ),
+                itemCount: _results.length,
+              ),
+      ),
+    );
   }
 }

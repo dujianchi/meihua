@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meihua/util/ai_helper.dart';
 import 'package:meihua/util/exts.dart';
+import 'package:meihua/util/sync_helper.dart';
 import 'package:meihua/widget/edit_text.dart';
 
 /// AI 设置页：配置接口地址、API密钥、模型与自定义提示词
@@ -36,6 +37,8 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
       customPrompt: customPrompt,
       systemPrompt: systemPrompt,
     );
+    // 推送AI设置同步(单份最新配置,新覆盖旧)
+    SyncHelper.scheduleAutoSync();
     '保存成功'.toast();
   }
 
