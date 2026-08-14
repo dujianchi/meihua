@@ -56,12 +56,10 @@ class _PanState extends State<_Pan> {
     if (gua64?.shang != gua64?.xia) {
       final shang8 = await Db8gua.fromName(gua64?.shang.name),
           xia8 = await Db8gua.fromName(gua64?.xia.name);
-      return TextSpan(
-          text: gua64?.tiyong(dong),
-          children: [
-            shang8!.toText(textGrey: textGrey),
-            xia8!.toText(textGrey: textGrey),
-          ]);
+      return TextSpan(text: gua64?.tiyong(dong), children: [
+        shang8!.toText(textGrey: textGrey),
+        xia8!.toText(textGrey: textGrey),
+      ]);
     } else {
       final shang8 = await Db8gua.fromName(gua64?.shang.name);
       return TextSpan(
@@ -82,11 +80,10 @@ class _PanState extends State<_Pan> {
       if (db64gua.shang != db64gua.xia) {
         final shangTxt = await Db8gua.fromName(db64gua.shang),
             xiaTxt = await Db8gua.fromName(db64gua.xia);
-        _bottomString = TextSpan(
-            children: [
-              shangTxt!.leiXiangStr(textGrey: scheme.onSurfaceVariant),
-              xiaTxt!.leiXiangStr(textGrey: scheme.onSurfaceVariant),
-            ]);
+        _bottomString = TextSpan(children: [
+          shangTxt!.leiXiangStr(textGrey: scheme.onSurfaceVariant),
+          xiaTxt!.leiXiangStr(textGrey: scheme.onSurfaceVariant),
+        ]);
       } else {
         final shangTxt = await Db8gua.fromName(db64gua.shang);
         _bottomString =
@@ -466,13 +463,6 @@ class _PanState extends State<_Pan> {
                     },
                     child: const Text('取消')),
                 TextButton(
-                    onPressed: () {
-                      final q = question.text();
-                      Get.until((route) => Get.isDialogOpen != true);
-                      _aiAsk(yi, q);
-                    },
-                    child: const Text('直接提问')),
-                TextButton(
                     onPressed: () async {
                       final q = question.text();
                       Get.until((route) => Get.isDialogOpen != true);
@@ -489,7 +479,20 @@ class _PanState extends State<_Pan> {
                       );
                       Get.to(() => AiPromptPage(prompt: prompt));
                     },
-                    child: const Text('生成AI提示词')),
+                    child: const Text(
+                      '提示词',
+                      style: TextStyle(color: Colors.blueAccent),
+                    )),
+                TextButton(
+                    onPressed: () {
+                      final q = question.text();
+                      Get.until((route) => Get.isDialogOpen != true);
+                      _aiAsk(yi, q);
+                    },
+                    child: const Text(
+                      '提问',
+                      style: TextStyle(color: Colors.redAccent),
+                    )),
               ],
               scrollable: true,
             ),
