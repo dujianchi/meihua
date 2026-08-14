@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:meihua/ai_settings.dart';
 import 'package:meihua/entity/yi.dart';
-import 'package:meihua/entity/database/db_ai_chat.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/util/sync_helper.dart';
 import 'package:meihua/widget/edit_text.dart';
+import 'package:meihua/widget/history_item.dart';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -35,53 +34,9 @@ class _HistoryState extends State<History> {
       itemBuilder: (context, index) {
         final item = _historyList[index];
         final visible = _visibles[index] == true;
-        final contentChildren = [
-          Visibility(
-            visible: visible,
-            child: Text(item.title!,
-                style: const TextStyle(color: Colors.redAccent)),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              // Text('id: $id'),
-              Text('上卦: ${item.shang!.baGua().name}'),
-              Text('下卦: ${item.xia!.baGua().name}'),
-              Text('变爻: ${item.bian!.yao()}'),
-            ],
-          ),
-          Text('时间: ${item.saveDate.dateStr()}',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          Text('农历时间: ${item.lunarDate.or()}',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        ];
-        if (item.describe?.isNotEmpty == true) {
-          contentChildren.add(Visibility(
-            visible: visible,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('详细说明:', style: TextStyle(color: Colors.blueAccent)),
-                MarkdownBody(
-                  data: item.describe!,
-                  styleSheet: MarkdownStyleSheet(
-                    p: const TextStyle(
-                      color: Colors.blueAccent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ));
-        }
-        return ListTile(
-          title: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: contentChildren,
-          ),
+        return HistoryItem(
+          item: item,
+          visible: visible,
           onTap: () async {
             await Get.toNamed(
               'pan',
@@ -89,45 +44,17 @@ class _HistoryState extends State<History> {
                 shang: item.shang! == 0 ? 8 : item.shang!,
                 xia: item.xia! == 0 ? 8 : item.xia!,
                 dong: item.bian! == 0 ? 6 : item.bian!,
-                historyDate: '${item.saveDate.dateStr()}\n(${item.lunarDate})',
+                historyDate:
+                    '${item.saveDate.dateStr()}\n(${item.lunarDate})',
                 historyId: item.id,
               ),
             );
             // 从排盘页返回后刷新列表,反映在详细页做的编辑/保存
             _loadData();
           },
-          onLongPress: () {
-            final hideText = (_visibles[index] ?? false) ? '隐藏' : '显示';
-            Get.bottomSheet(BottomSheet(
-                clipBehavior: Clip.antiAlias,
-                onClosing: () {},
-                builder: (context) {
-                  // _delete(id, title, index);
-                  final children = <Widget>[
-                    ListTile(
-                      title: const Text('编辑'),
-                      onTap: () => _edit(item),
-                    ),
-                    ListTile(
-                      title: Text(
-                        hideText,
-                        style: const TextStyle(color: Colors.blueAccent),
-                      ),
-                      onTap: () => _hide(index),
-                    ),
-                    ListTile(
-                      title: const Text(
-                        '删除',
-                        style: TextStyle(color: Colors.redAccent),
-                      ),
-                      onTap: () => _delete(item, index),
-                    ),
-                  ];
-                  return Wrap(
-                    children: children,
-                  );
-                }));
-          },
+          onEdit: () => _edit(item),
+          onToggleVisible: () => _hide(index),
+          onDelete: () => _delete(item, index),
         );
       },
       itemCount: _historyList.length,
@@ -251,75 +178,18 @@ class _HistoryState extends State<History> {
   void _delete(DbHistory item, int index) {
     Get.until((route) => Get.isBottomSheetOpen != true);
     '删除'.confirmDialog(() async {
-      // 软删+瘦身:保留墓碑(sync_hash/update_time/deleted)以传播删除,
-      // 其余字段置空,避免已删数据撑大同步文件
-      item.tombstone();
-      await DbHelper.update(item);
-      // 级联软删:该历史下的AI对话一并转墓碑
-      if (item.id != null) {
-        await DbAiChat.tombstoneByHistory(item.id!);
-      }
-
+      await deleteHistory(item);
       setState(() {
         _historyList.removeAt(index);
       });
       Get.until((route) => Get.isDialogOpen != true);
       '删除成功'.toast();
-      SyncHelper.scheduleAutoSync();
     }, content: '确定删除${item.title}吗');
   }
 
   void _edit(DbHistory item) {
     Get.until((route) => Get.isBottomSheetOpen != true);
-    final title = EditText(
-          label: '标题',
-          defaultStr: item.title,
-        ),
-        desc = EditText(
-          label: '详细说明',
-          maxLines: 3,
-          defaultStr: item.describe,
-        );
-    Get.generalDialog(
-      pageBuilder: (context, animation1, animation2) => AlertDialog(
-        title: const Text('保存'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            title,
-            desc,
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () {
-                Get.until((route) => Get.isDialogOpen != true);
-              },
-              child: const Text('取消')),
-          TextButton(
-              onPressed: () async {
-                final titleStr = title.text();
-                if (titleStr.isEmpty) {
-                  '标题不能为空'.toast();
-                } else {
-                  final descStr = desc.text();
-                  item.title = titleStr;
-                  item.describe = descStr;
-                  item.ensureSyncHash();
-                  item.touch();
-                  await DbHelper.update(item);
-
-                  Get.until((route) => Get.isDialogOpen != true);
-                  '保存成功'.toast();
-                  await _loadData();
-                  SyncHelper.scheduleAutoSync();
-                }
-              },
-              child: const Text('保存')),
-        ],
-        scrollable: true,
-      ),
-    );
+    showHistoryEditDialog(context, item, onSaved: () => _loadData());
   }
 
   void _hide(int index) {
@@ -358,6 +228,7 @@ class HistorySearchPage extends StatefulWidget {
 class _HistorySearchPageState extends State<HistorySearchPage> {
   final _ctrl = TextEditingController();
   var _results = <DbHistory>[];
+  final _hiddenIds = <int>{};
 
   @override
   void dispose() {
@@ -378,6 +249,15 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
     if (mounted) {
       setState(() => _results = raw);
     }
+  }
+
+  void _deleteResult(DbHistory item) {
+    '删除'.confirmDialog(() async {
+      await deleteHistory(item);
+      await _search(_ctrl.text);
+      Get.until((route) => Get.isDialogOpen != true);
+      '删除成功'.toast();
+    }, content: '确定删除${item.title}吗');
   }
 
   @override
@@ -402,11 +282,9 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
             : ListView.separated(
                 itemBuilder: (context, index) {
                   final item = _results[index];
-                  return ListTile(
-                    title: Text(item.title ?? ''),
-                    subtitle: Text(
-                        '${item.shang!.baGua().name} ${item.xia!.baGua().name} 变爻${item.bian!.yao()} '
-                        '${item.saveDate.dateStr()}'),
+                  return HistoryItem(
+                    item: item,
+                    visible: !_hiddenIds.contains(item.id),
                     onTap: () {
                       Get.toNamed(
                         'pan',
@@ -420,6 +298,16 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
                         ),
                       );
                     },
+                    onEdit: () => showHistoryEditDialog(context, item,
+                        onSaved: () => _search(_ctrl.text)),
+                    onToggleVisible: () {
+                      setState(() {
+                        if (!_hiddenIds.remove(item.id!)) {
+                          _hiddenIds.add(item.id!);
+                        }
+                      });
+                    },
+                    onDelete: () => _deleteResult(item),
                   );
                 },
                 separatorBuilder: (context, index) => const Divider(
