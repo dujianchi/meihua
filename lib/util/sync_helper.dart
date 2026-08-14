@@ -1,9 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:meihua/entity/database/db_ai_chat.dart';
 import 'package:meihua/entity/database/db_history.dart';
 import 'package:meihua/entity/database/db_history_sync.dart';
+import 'package:meihua/util/ai_helper.dart';
 import 'package:meihua/util/config_helper.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
@@ -208,6 +209,7 @@ class SyncHelper {
       try {
         await sync(false);
         await syncAiChat(false);
+        await syncAiConfig(false);
       } catch (ex) {
         ex.log('auto sync error: ');
       }
@@ -474,5 +476,116 @@ class SyncHelper {
     return arr
         .map((e) => DbAiChat()..fromMap(e as Map<String, dynamic>))
         .toList();
+  }
+
+  // ==================== AI设置同步(单份最新配置,新覆盖旧,无历史) ====================
+
+  static const _aiConfJson = '$_aiDir/ai_config.json';
+  static const _aiConfLock = '$_aiDir/ai_config.lock';
+
+  /// 读取本地AI配置(只收集已配置的项)
+  static Future<Map<String, dynamic>> _localAiConfigMap() async {
+    final map = <String, dynamic>{};
+    for (final key in AiHelper.configKeys) {
+      final val = await ConfigHelper.getConfig(key);
+      if (val?.isNotEmpty == true) {
+        map[key] = val;
+      }
+    }
+    return map;
+  }
+
+  static Future<Map<String, dynamic>?> _readAiConfigRemote() async {
+    final jsonStr = await _getContent(_aiConfJson);
+    if (jsonStr.isBlank) return null;
+    try {
+      return jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (ex) {
+      ex.log('ai config 解析失败: ');
+      return null;
+    }
+  }
+
+  /// AI设置同步:只保留一份最新配置,update_time 新者胜,永远以新的覆盖旧的
+  static Future<void> syncAiConfig([bool toast = true]) async {
+    var acquired = false;
+    try {
+      if (await _getSyncClient() == null) {
+        if (toast) 'AI设置同步失败：无法连接 WebDAV'.toast();
+        return;
+      }
+      await _createDir(_aiDir);
+      final lockStr = await _getContent(_aiConfLock);
+      if (lockStr.isBlank ||
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >=
+              _lockDays) {
+        await _write(_aiConfLock, '${DateTime.now().millisecondsSinceEpoch}');
+        acquired = true;
+        final remote = await _readAiConfigRemote();
+        final localMap = await _localAiConfigMap();
+        final localTime = (await ConfigHelper.getConfig(AiHelper.keyUpdateTime)).toInt();
+        final remoteTime = (remote?['update_time'] as num?)?.toInt() ?? 0;
+        if (remote == null || localMap.isEmpty || localTime >= remoteTime) {
+          // 本地为准(或远端为空/本地无配置时兜底):整份覆盖远端
+          final payload = <String, dynamic>{...localMap, 'update_time': localTime};
+          await _write(_aiConfJson, payload.toJson());
+        } else {
+          // 远端较新:覆盖本地配置
+          for (final key in AiHelper.configKeys) {
+            final val = remote[key];
+            if (val is String && val.isNotEmpty) {
+              await ConfigHelper.saveConfig(key, val);
+            }
+          }
+          await ConfigHelper.saveConfig(AiHelper.keyUpdateTime, '$remoteTime');
+        }
+        if (toast) 'AI设置同步完成'.toast();
+      } else {
+        'AI设置同步跳过：另一设备正在同步,请稍后再试'.toast(5);
+      }
+    } catch (ex) {
+      ex.log('ai config sync error: $ex');
+      if (toast) 'AI设置同步失败：$ex'.toast();
+    } finally {
+      if (acquired) {
+        await _write(_aiConfLock, '');
+      }
+    }
+  }
+
+  /// AI设置强制同步:本地配置整份覆盖远端(本地无配置时不覆盖,避免误清云端)
+  static Future<void> forceSyncAiConfig() async {
+    var acquired = false;
+    try {
+      if (await _getSyncClient() == null) {
+        'AI设置同步失败：无法连接 WebDAV'.toast();
+        return;
+      }
+      await _createDir(_aiDir);
+      final lockStr = await _getContent(_aiConfLock);
+      if (lockStr.isBlank ||
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >=
+              _lockDays) {
+        await _write(_aiConfLock, '${DateTime.now().millisecondsSinceEpoch}');
+        acquired = true;
+        final localMap = await _localAiConfigMap();
+        if (localMap.isNotEmpty) {
+          final nowMs = DateTime.now().millisecondsSinceEpoch;
+          await ConfigHelper.saveConfig(AiHelper.keyUpdateTime, '$nowMs');
+          final payload = <String, dynamic>{...localMap, 'update_time': nowMs};
+          await _write(_aiConfJson, payload.toJson());
+        }
+        'AI设置同步完成'.toast();
+      } else {
+        'AI设置同步跳过：另一设备正在同步,请稍后再试'.toast(5);
+      }
+    } catch (ex) {
+      ex.log('ai config sync error: $ex');
+      'AI设置同步失败：$ex'.toast();
+    } finally {
+      if (acquired) {
+        await _write(_aiConfLock, '');
+      }
+    }
   }
 }
