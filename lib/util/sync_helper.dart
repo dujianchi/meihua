@@ -526,25 +526,24 @@ class SyncHelper {
         final localTime =
             (await ConfigHelper.getConfig(AiHelper.keyUpdateTime)).toInt();
         final remoteTime = (remote?['update_time'] as num?)?.toInt() ?? 0;
-        // 远端存在且(本地无配置 或 远端更新) → 远端胜;否则本地胜。
-        // 注意:本地无配置时必须远端胜,否则空配置会覆盖远端并把 update_time
-        // 打成 0,导致后续所有设备 0>=0 永远本地胜、互相覆盖不了
+        // 判定:远端存在且(远端更新 或 本地从未配置) → 远端胜;否则本地胜。
+        // "从未配置"=无任何配置键且无时间戳(新设备),应导入远端;
+        // "主动清空后保存"=无配置键但有时间戳(保存时已盖章),视为一次有效
+        // 修改,应把清空状态传播到远端,而不是把远端旧配置导回来
+        final neverConfigured = localMap.isEmpty && localTime == 0;
         final remoteWins =
-            remote != null && (localMap.isEmpty || localTime < remoteTime);
+            remote != null && (neverConfigured || localTime < remoteTime);
         if (remoteWins) {
-          // 远端为准:覆盖本地配置,并同步时间戳
+          // 远端为准:整份覆盖本地(空值也写入,传播"已清空"状态)
           for (final key in AiHelper.configKeys) {
             final val = remote[key];
-            if (val is String && val.isNotEmpty) {
-              await ConfigHelper.saveConfig(key, val);
-            }
+            await ConfigHelper.saveConfig(key, val is String ? val : '');
           }
           await ConfigHelper.saveConfig(AiHelper.keyUpdateTime, '$remoteTime');
         } else {
-          // 本地为准:整份覆盖远端。本地无配置(远端也空)时写空壳;
-          // 本地有配置但缺时间戳(被 0 污染的旧文件)时补记当前时间,顺带修复
+          // 本地为准:整份覆盖远端;主动清空(本地无值但有时间戳)同样传播
           final ts = localMap.isEmpty
-              ? 0
+              ? localTime
               : (localTime > 0
                   ? localTime
                   : DateTime.now().millisecondsSinceEpoch);
