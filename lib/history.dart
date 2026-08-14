@@ -238,13 +238,18 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
 
   Future<void> _search(String keyword) async {
     final kw = keyword.trim();
+    if (kw.isEmpty) {
+      // 清空关键词:清空列表,不展示全部
+      if (mounted) {
+        setState(() => _results = []);
+      }
+      return;
+    }
     final raw = (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ??
         <DbHistory>[];
     raw.removeWhere((h) => h.deleted == 1);
-    if (kw.isNotEmpty) {
-      raw.removeWhere((h) =>
-          h.title?.contains(kw) != true && h.describe?.contains(kw) != true);
-    }
+    raw.removeWhere((h) =>
+        h.title?.contains(kw) != true && h.describe?.contains(kw) != true);
     raw.sort((a, b) => b.saveDate?.compareTo(a.saveDate ?? 0) ?? 0);
     if (mounted) {
       setState(() => _results = raw);
