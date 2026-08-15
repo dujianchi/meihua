@@ -93,7 +93,7 @@ class _HistoryState extends State<History> {
     );
   }
 
-  void _actionSelected(index) async {
+  void _actionSelected(int index) async {
     if (index == 0) {
       _showAll = !_showAll;
       for (var i = 0; i < _historyList.length; i++) {
