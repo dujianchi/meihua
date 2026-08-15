@@ -164,7 +164,7 @@ extension LunarExt on Lunar {
 }
 
 extension DynamicExt on dynamic {
-  void log([prefix]) {
+  void log([dynamic prefix]) {
     if (kDebugMode) {
       debugPrint('${prefix ?? ''}${this?.toString()}');
     }

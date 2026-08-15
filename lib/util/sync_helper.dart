@@ -77,7 +77,7 @@ class SyncHelper {
   //       <String>[];
   // }
 
-  static _write(String path, String? content) async {
+  static Future<void> _write(String path, String? content) async {
     final client = await _getSyncClient();
     await client?.write(path, utf8.encode(content ?? ''));
   }
@@ -88,7 +88,7 @@ class SyncHelper {
   //   return response?.statusCode == 200;
   // }
 
-  static _createDir(String path) async {
+  static Future<void> _createDir(String path) async {
     final client = await _getSyncClient();
     await client?.mkdirAll(path);
   }
@@ -150,7 +150,7 @@ class SyncHelper {
     }
   }
 
-  static forceSync() async {
+  static Future<void> forceSync() async {
     // 本地整份快照直接覆盖远端(状态快照模型下不再需要"全删"指令)
     const dir = '/meihua',
         lock = '$dir/lock',
@@ -289,7 +289,9 @@ class SyncHelper {
 
   /// 读远端 sync.json 并还原成 DbHistory 列表。
   /// 兼容两种格式:
+  // ignore: unintended_html_in_doc_comment
   ///  - 新格式:List<DbHistory 快照 map>
+  // ignore: unintended_html_in_doc_comment
   ///  - 旧格式:List<DbHistorySync 操作日志>(含 'operate' 字段),回放一次转成快照
   static Future<List<DbHistory>> _readRemoteSnapshot(String json) async {
     final jsonStr = await _getContent(json);
