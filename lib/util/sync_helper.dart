@@ -197,6 +197,14 @@ class SyncHelper {
 
   static Timer? _autoSyncTimer;
 
+  /// 历史页进入时自动同步的节流键:记录最近一次成功同步的时间,1 小时内不再触发
+  static const autoSyncKey = 'auto_sync_last_time';
+  static const autoSyncInterval = Duration(hours: 1);
+
+  /// 记录一次成功同步(手动/自动都调用,重置历史页自动同步的节流窗口)
+  static Future<void> markAutoSyncTime() =>
+      ConfigHelper.saveConfig(autoSyncKey, '${DateTime.now().millisecondsSinceEpoch}');
+
   /// 安排一次延迟自动同步(默认 2 秒后)。连续调用会重置计时,把快速连续的
   /// 增删改合并成一次同步。仅在已配置 WebDAV 时实际执行;同步在后台进行,
   /// 不阻塞 UI。本地数据已即时落盘,同步只负责推到远端,所以 UI 始终是新的。
