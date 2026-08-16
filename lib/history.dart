@@ -4,6 +4,7 @@ import 'package:get/route_manager.dart';
 import 'package:meihua/ai_settings.dart';
 import 'package:meihua/entity/yi.dart';
 import 'package:meihua/entity/database/db_history.dart';
+import 'package:meihua/util/config_helper.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
 import 'package:meihua/util/sync_helper.dart';
@@ -25,7 +26,49 @@ class _HistoryState extends State<History> {
   @override
   void initState() {
     _loadData();
+    _autoSyncOnce();
     super.initState();
+  }
+
+  /// 首次进入页面时自动同步一次:已配置 WebDAV 且距上次成功同步超过 1 小时才触发
+  Future<void> _autoSyncOnce() async {
+    if (!await SyncHelper.isConfigured()) return;
+    final last = (await ConfigHelper.getConfig(SyncHelper.autoSyncKey)).toInt();
+    if (DateTime.now().millisecondsSinceEpoch - last <
+        SyncHelper.autoSyncInterval.inMilliseconds) {
+      return;
+    }
+    Get.dialog(
+      const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('正在同步...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+    try {
+      await SyncHelper.sync(false);
+      await SyncHelper.syncAiChat(false);
+      await SyncHelper.syncAiConfig(false);
+      await SyncHelper.markAutoSyncTime();
+      await _loadData();
+    } catch (ex) {
+      ex.log('历史页自动同步失败: ');
+    } finally {
+      if (Get.isDialogOpen == true) {
+        Get.until((route) => Get.isDialogOpen != true);
+      }
+    }
   }
 
   @override
@@ -107,6 +150,7 @@ class _HistoryState extends State<History> {
           await SyncHelper.sync(false);
           await SyncHelper.syncAiChat(false);
           await SyncHelper.syncAiConfig(false);
+          await SyncHelper.markAutoSyncTime();
           await _loadData();
           '同步完成'.toast();
         }, content: '同步将同时排盘历史、AI对话和AI设置');
@@ -146,6 +190,7 @@ class _HistoryState extends State<History> {
                     await SyncHelper.forceSync();
                     await SyncHelper.forceSyncAiChat();
                     await SyncHelper.forceSyncAiConfig();
+                    await SyncHelper.markAutoSyncTime();
                     await _loadData();
                     Get.until((route) => Get.isDialogOpen != true);
                   }, content: '确定以本地数据覆盖云端数据吗？');
