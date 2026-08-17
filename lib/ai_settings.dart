@@ -81,7 +81,7 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
       maxLines: 12,
     );
     final temperature = EditText(
-      label: '温度（0~2，默认0.7）',
+      label: '温度（0~2，默认0.7，温度越低越固定，越高越随机）',
       defaultStr: '${config.temperature}',
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       enabled: _sendTemp,

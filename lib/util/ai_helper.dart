@@ -207,8 +207,10 @@ class AiHelper {
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 120),
     ));
-    'AI请求: endpoint=$endpoint, model=$model'.log();
-    'AI请求体: ${_snip(jsonEncode(messages))}'.log();
+    'AI请求: endpoint=$endpoint, model=$model, '
+            'temperature=${config.sendTemperature ? config.temperature : '不传'}'
+        .log();
+    'AI请求体: ${jsonEncode(messages)}'.log();
     try {
       final response = await dio.post(
         endpoint,
@@ -252,7 +254,7 @@ class AiHelper {
 
   /// 解析 chat/completions 响应；格式不对时抛出含原始返回片段的异常
   static AiReply _parseResponse(dynamic data) {
-    'AI响应: ${_snip('$data')}'.log();
+    'AI响应: $data'.log();
     if (data is! Map) {
       throw Exception('接口返回非JSON格式：${_snip('$data')}');
     }
