@@ -14,6 +14,7 @@ class AiSettingsPage extends StatefulWidget {
 
 class _AiSettingsPageState extends State<AiSettingsPage> {
   AiConfig? _config;
+  bool _sendTemp = true;
 
   @override
   void initState() {
@@ -24,18 +25,24 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
   Future<void> _load() async {
     final config = await AiHelper.loadConfig();
     if (mounted) {
-      setState(() => _config = config);
+      setState(() {
+        _config = config;
+        _sendTemp = config.sendTemperature;
+      });
     }
   }
 
   Future<void> _save(String? endpoint, String? apiKey, String? model,
-      String? customPrompt, String? systemPrompt) async {
+      String? customPrompt, String? systemPrompt, String? temperature) async {
+    final temp = double.tryParse(temperature?.trim() ?? '')?.clamp(0.0, 2.0);
     await AiHelper.saveConfig(
       endpoint: endpoint,
       apiKey: apiKey,
       model: model,
       customPrompt: customPrompt,
       systemPrompt: systemPrompt,
+      temperature: temp,
+      sendTemperature: _sendTemp,
     );
     // 推送AI设置同步(单份最新配置,新覆盖旧)
     SyncHelper.scheduleAutoSync();
@@ -73,6 +80,12 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
       defaultStr: config.systemPrompt,
       maxLines: 12,
     );
+    final temperature = EditText(
+      label: '温度（0~2，默认0.7）',
+      defaultStr: '${config.temperature}',
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      enabled: _sendTemp,
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI设置'),
@@ -84,6 +97,7 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
               model.trim(),
               prompt.text(),
               systemPrompt.text(),
+              temperature.text(),
             ),
             child: const Text('保存'),
           ),
@@ -102,6 +116,15 @@ class _AiSettingsPageState extends State<AiSettingsPage> {
             prompt,
             const SizedBox(height: 12),
             systemPrompt,
+            const SizedBox(height: 12),
+            SwitchListTile(
+              title: const Text('发送温度参数'),
+              subtitle: const Text('部分接口不支持 temperature，关闭后请求不再携带'),
+              value: _sendTemp,
+              onChanged: (v) => setState(() => _sendTemp = v),
+              contentPadding: EdgeInsets.zero,
+            ),
+            temperature,
             const SizedBox(height: 8),
             const Text(
               '系统提示词：设定AI角色、解卦要求与输出格式，留空则使用默认值；修改后无需重新打包，下次对话生效。',

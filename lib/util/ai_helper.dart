@@ -7,12 +7,18 @@ import 'package:meihua/util/exts.dart';
 /// AI 接口配置
 class AiConfig {
   final String endpoint, apiKey, model, customPrompt, systemPrompt;
+  final double temperature;
+
+  /// 是否在请求中携带 temperature 参数(部分接口不支持,可关闭)
+  final bool sendTemperature;
   const AiConfig({
     required this.endpoint,
     required this.apiKey,
     required this.model,
     required this.customPrompt,
     required this.systemPrompt,
+    this.temperature = 0.7,
+    this.sendTemperature = true,
   });
 }
 
@@ -30,6 +36,8 @@ class AiHelper {
   static const keyModel = 'ai_model';
   static const keyPrompt = 'ai_prompt';
   static const keySystemPrompt = 'ai_system_prompt';
+  static const keyTemperature = 'ai_temperature';
+  static const keySendTemperature = 'ai_send_temperature';
 
   /// AI配置的版本时间戳(配置表键):保存配置时刷新,同步时新者胜
   static const keyUpdateTime = 'ai_config_update_time';
@@ -41,7 +49,12 @@ class AiHelper {
     keyModel,
     keyPrompt,
     keySystemPrompt,
+    keyTemperature,
+    keySendTemperature,
   ];
+
+  /// 默认采样温度:随机性低、占断更稳定
+  static const defaultTemperature = 0.7;
 
   /// 默认系统提示词(可在AI设置页修改,无需重新打包)
   static const defaultSystemPrompt = '''
@@ -70,13 +83,13 @@ class AiHelper {
 （注：所有卦名均可按“上卦意象+下卦意象”拆解，如“火雷噬嗑”=上离下震，“地天泰”=上坤下乾，依此类推。）
 
 **【体用生克关系判定标准】**  
-① 用生体（吉）、体生用（泄气，凶）、体克用（吉中藏劳）、用克体（凶）。  
+① 用生体（吉）、体生用（泄气，凶）、体克用（吉中藏劳）、用克体（凶）、比和（吉）。  
 ② 若互卦或变卦的上下卦对体卦构成显著生扶或克泄，可综合考虑。  
 ③ 同时结合季节旺衰：体卦旺相则抗克力强，体卦衰囚则受克更甚。  
 
 **生克方向铁律（必须逐字核对）**：  
-五行相克只有：金克木、木克土、土克水、水克火、火克金。  
-判断时先写出体卦五行、用卦五行，再对照相克表确认谁克谁。  
+五行相克只有：金克木、木克土、土克水、水克火、火克金。  五行相生只有：金生水，水生木，木生火，火生土，土生金。五行相同为比和。
+判断时先写出体卦五行、用卦五行，再对照相克表确认谁克谁、谁生谁或比和。  
 例如：体乾金、用震木，因金克木，所以是“体（乾金）克 用（震木）”，严禁写成“用（震木）克 体（乾金）”。
 
 **【解卦步骤与要求】**  
@@ -87,27 +100,27 @@ class AiHelper {
    - 若动爻在**下卦**（第1、2、3爻）→ 下卦为用卦，上卦为体卦。
    - **输出时必须以“动爻在第X爻，位于X卦，故体卦为X（五行）、用卦为Y（五行）”的格式明确写出判定依据**。  
 3. 直接解析本卦、互卦、变卦，**不验证**用户提供的卦象是否正确。  
-4. 分析体用生克时，必须明确写出“用生体”“体生用”“体克用”“用克体”中的具体一项，并表述为“体（X五行）生/克/泄 用（Y五行）”或“用（Y五行）生/克/泄 体（X五行）”的格式。  
+4. 分析体用生克时，必须明确写出“用生体”“体生用”“体克用”“用克体”“比和”中的具体一项，并表述为“体（X五行）生/克/泄 用（Y五行）”或“用（Y五行）生/克/泄 体（X五行）”或“用（Y五行）与体（X五行）五行相同，比和”的格式。  
 4.1. **五行关系表述强制规范**：所有五行生克关系必须使用完整句式，格式为“【五行A】生/克/泄/比【五行B】”，严禁使用“某卦对体卦为【克】”这类省略主语的写法。错误示例：“巽属木，对体卦（金）为克”（正确应为“体（金）克巽（木）”）。  
 5. **卦象类象**（必须分析）：结合本卦、互卦、变卦的上下卦象，针对用户所问背景，解读各卦象对事项的象征意义与暗示。  
-6. **应期参考**（可选）：可参考动爻数、先天卦数之和，或结合体卦旺相之季节、月份，推断时间节点，不作硬性定论。  
+6. **应期参考**（可选）：可参考先天卦数之和、动爻数，或结合体卦旺相之季节、月份，推断时间节点，不作硬性定论。  
 7. **卦辞与爻辞的引用不作强制要求**，若引用，优先参考变卦中对应动爻位置的爻辞，须白话解释并贴合背景。  
 8. **本卦、互卦、变卦的解读逻辑**：本卦表当前处境，互卦表发展过程，变卦表最终趋向。  
    - **体用位置一脉相承**：互卦、变卦的体用位置必须与本卦体用位置保持一致。若本卦体卦在上卦，则互卦、变卦的上卦为体、下卦为用；若本卦体卦在下卦，则互卦、变卦的下卦为体、上卦为用。  
    - 分析互卦体用生克以判断过程吉凶，分析变卦体用生克以判断结果吉凶。  
    - **特定场景辅助**：若无时间发展、仅问当前状态，或需要补充判断时，可分析互卦上卦、互卦下卦、变卦上卦、变卦下卦对本卦体卦的生克比和关系，作为辅助说明。  
-9. 输出总字数**严格控制在600字以内**（含标点）。
+9. 输出总字数**严格控制在800字以内**（含标点）。
 
 **输出前自检清单**：  
 ① 体用五行是否与动爻位置一致？  
 ② 体用生克方向是否与五行相克表完全一致？  
-③ 是否出现“木克金”“火克水”等反向错误？  
+③ 是否出现“木克金”“火克水”“火生木”等反向错误（正确应为“金克木”“水克火”“木生火”）？  
 ④ 互卦、变卦体用位置是否与本卦体用位置一致？  
 ⑤ 互卦、变卦体用生克关系是否正确？  
-⑥ 字数是否超过600？
+⑥ 字数是否超过800？
 
 **【输出格式】**  
-
+``` markdown
 - 本卦：卦名  
 - 互卦：卦名  
 - 变卦：卦名  
@@ -121,11 +134,16 @@ class AiHelper {
 - 综合断语：……（融合本互变、体用、类象，给出结论）  
 - 建议：……（具体行动建议）。  
 - 本解析为AI推演，需理性对待，请结合现实信息与科学方法做最终决策。
-
+```
 ''';
 
   /// 加载配置，未设置的项使用默认值
   static Future<AiConfig> loadConfig() async {
+    final temperature = double.tryParse(
+            (await ConfigHelper.getConfig(keyTemperature)).or('$defaultTemperature'))
+        ?.clamp(0.0, 2.0);
+    // 未设置或为空(同步传播的清空)时按开启处理
+    final sendTemperature = await ConfigHelper.getConfig(keySendTemperature);
     return AiConfig(
       endpoint: (await ConfigHelper.getConfig(keyEndpoint)).or('https://api.agnes-ai.cn/v1/chat/completions'),
       apiKey: (await ConfigHelper.getConfig(keyKey)).or('sk-gVla6Pca3kbNCcybrTPbFTSnz7FmtUwEHIpBSTM97UgyTHJf'),
@@ -133,6 +151,10 @@ class AiHelper {
       customPrompt: (await ConfigHelper.getConfig(keyPrompt)).or('{卦象}'),
       systemPrompt: (await ConfigHelper.getConfig(keySystemPrompt))
           .or(defaultSystemPrompt),
+      temperature: temperature ?? defaultTemperature,
+      sendTemperature: sendTemperature == null ||
+          sendTemperature.isEmpty ||
+          sendTemperature == '1',
     );
   }
 
@@ -142,12 +164,18 @@ class AiHelper {
     String? model,
     String? customPrompt,
     String? systemPrompt,
+    double? temperature,
+    bool? sendTemperature,
   }) async {
     await ConfigHelper.saveConfig(keyEndpoint, endpoint);
     await ConfigHelper.saveConfig(keyKey, apiKey);
     await ConfigHelper.saveConfig(keyModel, model);
     await ConfigHelper.saveConfig(keyPrompt, customPrompt);
     await ConfigHelper.saveConfig(keySystemPrompt, systemPrompt);
+    await ConfigHelper.saveConfig(
+        keyTemperature, temperature?.toStringAsFixed(2));
+    await ConfigHelper.saveConfig(
+        keySendTemperature, sendTemperature == null ? null : (sendTemperature ? '1' : '0'));
     // 刷新配置版本时间戳,供AI设置同步以"新覆盖旧"
     await ConfigHelper.saveConfig(
         keyUpdateTime, '${DateTime.now().millisecondsSinceEpoch}');
@@ -191,6 +219,7 @@ class AiHelper {
         data: {
           'model': model,
           'messages': messages,
+          if (config.sendTemperature) 'temperature': config.temperature,
         },
       );
       return _parseResponse(response.data);

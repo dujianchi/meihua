@@ -8,6 +8,7 @@ class EditText extends StatelessWidget {
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final bool obscureText;
+  final bool enabled;
   final FocusNode? focusNode;
   final ValueChanged<String>? onSubmitted;
   final bool selectAllAfterRequestedFocus; // 当获取焦点时，选中所有文本
@@ -21,6 +22,7 @@ class EditText extends StatelessWidget {
     this.maxLines,
     String? defaultStr,
     this.obscureText = false,
+    this.enabled = true,
     this.focusNode,
     this.onSubmitted,
     this.selectAllAfterRequestedFocus = false,
@@ -45,6 +47,7 @@ class EditText extends StatelessWidget {
     focusNode?.addListener(_selectionAll);
     final textField = TextField(
       obscureText: obscureText,
+      enabled: enabled,
       maxLines: obscureText ? 1 : maxLines,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
