@@ -341,7 +341,8 @@ class _AiResultPageState extends State<AiResultPage> {
                                   ),
                                 ),
                               MarkdownBody(
-                                data: content,
+                                // 剥掉包裹全文的外层代码围栏,否则按代码块横向滚动渲染,不软换行
+                                data: unwrapOuterCodeFence(content),
                                 styleSheet: MarkdownStyleSheet(
                                   p: TextStyle(
                                     fontSize: 15,
@@ -422,6 +423,23 @@ class _AiResultPageState extends State<AiResultPage> {
 
 /// 系统提示词:内容可在AI设置页修改,这里返回当前默认值
 String buildAiSystemPrompt() => AiHelper.defaultSystemPrompt;
+
+/// 剥掉包裹全文的外层代码围栏(``` 或 ```markdown),让内容按普通 markdown 软换行。
+/// 模型常照系统提示词把整段答案用 ``` 包起来,而代码块按横向滚动渲染、不换行;
+/// 仅当开头是 ``` 围栏行且结尾以 ``` 收拢时才剥除,保留正文中的行内代码块。
+String unwrapOuterCodeFence(String s) {
+  final headEnd = s.indexOf('\n');
+  if (headEnd < 0) return s;
+  final head = s.substring(0, headEnd).trim();
+  if (!RegExp(r'^``` ?[a-z0-9_-]*$', caseSensitive: false).hasMatch(head)) {
+    return s;
+  }
+  final body = s.substring(headEnd + 1);
+  final end = body.lastIndexOf('```');
+  // 结束围栏须在正文最后一段行尾,避免误删正文里的代码围栏
+  if (end < 0 || body.substring(end + 3).trim().isNotEmpty) return s;
+  return body.substring(0, end).trimRight();
+}
 
 /// 用户消息:本次卦象信息与问事背景。`question` 为用户输入的"问的是什么"，可空。
 String buildAiUserContent({
