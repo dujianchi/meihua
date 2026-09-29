@@ -96,10 +96,10 @@ class _PanState extends State<_Pan> {
   }
 
   void _updateTitleDesc() async {
-    final historyId = widget.yi?.historyId;
-    if (historyId != null) {
-      final savedHistory = (await DbHelper.query<DbHistory>(
-              dhitory.dbName, (ls) => ls?.where((t) => t.id == historyId)))
+    final historySyncHash = widget.yi?.historySyncHash;
+    if (historySyncHash != null) {
+      final savedHistory = (await DbHelper.query<DbHistory>(dhitory.dbName,
+              (ls) => ls?.where((t) => t.syncHash == historySyncHash)))
           ?.firstOrNull;
       if (savedHistory != null) {
         dhitory = savedHistory;
@@ -126,29 +126,24 @@ class _PanState extends State<_Pan> {
     }
   }
 
-  /// 加载AI对话:优先按 historyId 查,未保存排盘历史则按(上卦,下卦,变爻)查;
-  /// 同一卦可能有多段对话,取最新一段。兼容旧数据:历史记录里遗留的
-  /// ai_messages 首次迁移进对话表
+  /// 加载AI对话:先按排盘历史的 sync_hash 精确查;再兜底捞"尚未挂到排盘历史"的对话
+  /// (新建排盘还没保存时外键为空,云端也可能有外键缺失的旧数据),按(上卦,下卦,变爻)匹配。
+  /// 同一卦可能有多段对话,取最新一段
   Future<void> _loadAiChat() async {
     if (_aiLoaded) return;
     _aiLoaded = true;
     final yi = widget.yi;
     if (yi == null) return;
-    final historyId = yi.historyId;
-    Iterable<DbAiChat>? rows;
-    if (historyId != null) {
-      rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
-          (ls) => ls?.where((t) => t.historyId == historyId && t.deleted != 1));
-    } else {
-      rows = await DbHelper.query<DbAiChat>(
-          DbAiChat.nameDb,
-          (ls) => ls?.where((t) =>
-              t.historyId == null &&
-              t.deleted != 1 &&
-              t.shang == yi.shang &&
-              t.xia == yi.xia &&
-              t.bian == yi.dong));
-    }
+    final historyHash = yi.historySyncHash;
+    final rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
+        (ls) => ls?.where((t) {
+              if (t.deleted == 1) return false;
+              if (historyHash != null && t.historyHash == historyHash) return true;
+              return t.historyHash == null &&
+                  t.shang == yi.shang &&
+                  t.xia == yi.xia &&
+                  t.bian == yi.dong;
+            }));
     final chat = rows?.isNotEmpty == true
         ? rows!.reduce(
             (a, b) => (a.updateTime ?? 0) >= (b.updateTime ?? 0) ? a : b)
@@ -177,7 +172,7 @@ class _PanState extends State<_Pan> {
     _aiMessages = messages;
     final yi = widget.yi;
     var chat = _aiChat ??= DbAiChat()
-      ..historyId = yi?.historyId ?? dhitory.id
+      ..historyHash = yi?.historySyncHash ?? dhitory.syncHash
       ..shang = yi?.shang
       ..xia = yi?.xia
       ..bian = yi?.dong;
@@ -403,8 +398,8 @@ class _PanState extends State<_Pan> {
       case 1:
         // 删除：参考 history.dart 的软删逻辑
         final yi = widget.yi;
-        final historyId = yi?.historyId ?? dhitory.id;
-        if (historyId == null) {
+        final historyHash = yi?.historySyncHash ?? dhitory.syncHash;
+        if (historyHash == null) {
           '当前无历史记录可删除'.toast();
         } else {
           final title = _titleStr?.isNotEmpty == true ? _titleStr! : '此记录';
@@ -422,10 +417,8 @@ class _PanState extends State<_Pan> {
                       // 软删+瘦身:保留墓碑(sync_hash/update_time/deleted)以传播删除
                       dhitory.tombstone();
                       await DbHelper.update(dhitory);
-                      // 级联软删:该历史下的AI对话一并转墓碑
-                      if (dhitory.id != null) {
-                        await DbAiChat.tombstoneByHistory(dhitory.id!);
-                      }
+                      // 级联软删:该历史下的AI对话一并转墓碑(按 sync_hash 关联)
+                      await DbAiChat.tombstoneByHistory(historyHash);
                       // 先关掉确认弹窗,再弹出 pan 页(直到当前路由不是 pan)
                       Get.until((route) => Get.isDialogOpen != true);
                       Get.until((route) => route.settings.name != 'pan');
@@ -521,8 +514,10 @@ class _PanState extends State<_Pan> {
     if (messages.isNoneEmpty) {
       // 旧数据遗留的未关联对话,顺手挂到新保存的排盘历史下
       final chat = _aiChat;
-      if (chat != null && chat.historyId == null) {
-        chat.historyId = dhitory.id;
+      if (chat != null && chat.historyHash == null) {
+        chat.historyHash = dhitory.syncHash;
+        // 必须刷新版本号,否则同步按 update_time 判新旧时平局不覆盖,挂载关系推不出去
+        chat.touch();
         await DbHelper.update(chat);
       }
       Get.to(() => AiResultPage(
@@ -599,10 +594,12 @@ class _PanState extends State<_Pan> {
     dhitory.touch();
     dhitory.id = await DbHelper.save(dhitory);
 
-    // 保存排盘历史后,把对话表里未关联的记录挂到新历史id下
+    // 保存排盘历史后,把对话表里未关联的记录挂到新历史的 sync_hash 下
     final chat = _aiChat;
-    if (chat != null && chat.historyId == null) {
-      chat.historyId = dhitory.id;
+    if (chat != null && chat.historyHash == null) {
+      chat.historyHash = dhitory.syncHash;
+      // 必须刷新版本号,否则同步按 update_time 判新旧时平局不覆盖,挂载关系推不出去
+      chat.touch();
       await DbHelper.update(chat);
     }
 

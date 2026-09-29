@@ -87,9 +87,8 @@ class _HistoryState extends State<History> {
                 shang: item.shang! == 0 ? 8 : item.shang!,
                 xia: item.xia! == 0 ? 8 : item.xia!,
                 dong: item.bian! == 0 ? 6 : item.bian!,
-                historyDate:
-                    '${item.saveDate.dateStr()}\n(${item.lunarDate})',
-                historyId: item.id,
+                historyDate: '${item.saveDate.dateStr()}\n(${item.lunarDate})',
+                historySyncHash: item.syncHash,
               ),
             );
             // 从排盘页返回后刷新列表,反映在详细页做的编辑/保存
@@ -327,8 +326,7 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
       body: SafeArea(
         child: _results.isEmpty
             ? const Center(
-                child: Text('未找到相关记录',
-                    style: TextStyle(color: Colors.grey)))
+                child: Text('未找到相关记录', style: TextStyle(color: Colors.grey)))
             : ListView.separated(
                 itemBuilder: (context, index) {
                   final item = _results[index];
@@ -344,7 +342,7 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
                           dong: item.bian! == 0 ? 6 : item.bian!,
                           historyDate:
                               '${item.saveDate.dateStr()}\n(${item.lunarDate})',
-                          historyId: item.id,
+                          historySyncHash: item.syncHash,
                         ),
                       );
                     },

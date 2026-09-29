@@ -87,8 +87,7 @@ class HistoryItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('详细说明:',
-                style: TextStyle(color: Colors.blueAccent)),
+            const Text('详细说明:', style: TextStyle(color: Colors.blueAccent)),
             MarkdownBody(
               data: item.describe!,
               styleSheet: MarkdownStyleSheet(
@@ -109,11 +108,10 @@ class HistoryItem extends StatelessWidget {
         children: contentChildren,
       ),
       onTap: onTap,
-      onLongPress: (onEdit != null ||
-              onToggleVisible != null ||
-              onDelete != null)
-          ? _showMenu
-          : null,
+      onLongPress:
+          (onEdit != null || onToggleVisible != null || onDelete != null)
+              ? _showMenu
+              : null,
     );
   }
 }
@@ -171,8 +169,8 @@ Future<void> showHistoryEditDialog(
 Future<void> deleteHistory(DbHistory item) async {
   item.tombstone();
   await DbHelper.update(item);
-  if (item.id != null) {
-    await DbAiChat.tombstoneByHistory(item.id!);
+  if (item.syncHash != null) {
+    await DbAiChat.tombstoneByHistory(item.syncHash!);
   }
   SyncHelper.scheduleAutoSync();
 }

@@ -125,12 +125,10 @@ types:
         index: 6
   DbAiChat:
     typeId: 5
-    nextIndex: 9
+    nextIndex: 10
     fields:
       id:
         index: 0
-      historyId:
-        index: 1
       shang:
         index: 2
       xia:
@@ -145,3 +143,5 @@ types:
         index: 7
       deleted:
         index: 8
+      historyHash:
+        index: 9

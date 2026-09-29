@@ -7,13 +7,15 @@ import 'package:meihua/widget/chong_gua.dart';
 class Yi {
   final int shang, xia, dong;
   final String? historyDate;
-  final int? historyId;
+
+  /// 来源排盘历史的 sync_hash(跨设备唯一不变的身份键),非从历史列表打开时为空
+  final String? historySyncHash;
   Yi({
     required this.shang,
     required this.xia,
     required this.dong,
     this.historyDate,
-    this.historyId,
+    this.historySyncHash,
   }) {
     assert(shang >= 1 && shang <= 8);
     assert(xia >= 1 && xia <= 8);

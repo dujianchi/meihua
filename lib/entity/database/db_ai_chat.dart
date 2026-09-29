@@ -1,14 +1,12 @@
 import 'package:meihua/entity/database/base.dart';
-import 'package:meihua/entity/database/db_history.dart';
-import 'package:meihua/util/config_helper.dart';
 import 'package:meihua/util/db_helper.dart';
 import 'package:meihua/util/exts.dart';
-import 'package:meihua/util/sync_helper.dart';
 
 /// AI对话记录:每个卦(或已保存的排盘历史)一条,实时保存。
-/// 通过 historyId 关联已保存的排盘历史;未保存时 historyId 为空,
-/// 按 (shang, xia, bian) 匹配同一卦的对话。
-/// 同步:独立于排盘历史,单独同步文件,采用同样的快照+LWW模型
+/// 通过 [historyHash] 关联排盘历史,值是排盘历史的 sync_hash —— 那是卦跨设备唯一
+/// 不变的身份键;本机 Hive 主键每台设备各编各的(同步落地时会被换成新号),绝不能用作关联。
+/// 未保存排盘历史时 [historyHash] 为空,按 (shang, xia, bian) 匹配同一卦的对话。
+/// 同步:独立于排盘历史,单独同步文件,采用同样的快照+LWW+墓碑模型
 class DbAiChat extends Base {
   static const nameDb = 'ai_chat';
   @override
@@ -16,22 +14,27 @@ class DbAiChat extends Base {
 
   @override
   int? id;
-  /// 关联的排盘历史id,未保存排盘历史时为空
-  int? historyId;
+
+  /// 关联的排盘历史 sync_hash,未保存排盘历史时为空
+  String? historyHash;
   int? shang, xia, bian;
+
   /// 对话内容(JSON字符串, [{role, content}...]),不裁剪
   String? messages;
+
   /// 最近更新时间(毫秒),用于多行时取最新
   int? updateTime;
+
   /// 同步身份键:内容md5,计算一次后固定(同排盘历史的 ensureSyncHash)
   String? syncHash;
+
   /// 软删标记:0/空=正常,1=已删除(列表不展示,但快照里保留以传播删除)
   int? deleted;
 
   @override
   void fromMap(Map<String, dynamic> map) {
     id = map['id'];
-    historyId = map['history_id'];
+    historyHash = map['history_hash'];
     shang = map['shang'];
     xia = map['xia'];
     bian = map['bian'];
@@ -46,7 +49,7 @@ class DbAiChat extends Base {
     ensureSyncHash();
     final map = <String, dynamic>{};
     map['id'] = id;
-    map['history_id'] = historyId;
+    map['history_hash'] = historyHash;
     map['shang'] = shang;
     map['xia'] = xia;
     map['bian'] = bian;
@@ -57,11 +60,12 @@ class DbAiChat extends Base {
     return map;
   }
 
-  /// 计算并固化 syncHash(仅首次为空时计算,之后不再随内容变化),用作同步身份键
+  /// 计算并固化 syncHash(仅首次为空时计算,之后不再随内容变化),用作同步身份键。
+  /// 只取内容字段,不含关联键:对话可以在任何时候被挂到排盘历史下(见 pan 页的
+  /// _saveHistory),关联键进了 hash 会让同一份对话固化出两个身份。
   void ensureSyncHash() {
     if (syncHash?.isNotEmpty != true) {
       final map = <String, dynamic>{};
-      map['history_id'] = historyId;
       map['shang'] = shang;
       map['xia'] = xia;
       map['bian'] = bian;
@@ -81,7 +85,7 @@ class DbAiChat extends Base {
   void tombstone({bool touch = true}) {
     deleted = 1;
     if (touch) this.touch();
-    historyId = null;
+    historyHash = null;
     shang = null;
     xia = null;
     bian = null;
@@ -91,61 +95,18 @@ class DbAiChat extends Base {
   /// 是否已是精简墓碑(用于迁移时跳过已瘦身的记录)
   bool get isStrippedTombstone => deleted == 1 && messages == null;
 
-  /// 级联软删:该排盘历史下的所有对话一并转墓碑(删除历史时调用)
-  static Future<void> tombstoneByHistory(int historyId) async {
-    final chats = (await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
-            (ls) =>
-                ls?.where((t) => t.historyId == historyId && t.deleted != 1)))
-        ?.toList() ??
+  /// 级联软删:该排盘历史(sync_hash)下的所有对话一并转墓碑(删除历史时调用)
+  static Future<void> tombstoneByHistory(String historyHash) async {
+    final chats = (await DbHelper.query<DbAiChat>(
+                DbAiChat.nameDb,
+                (ls) => ls?.where(
+                    (t) => t.historyHash == historyHash && t.deleted != 1)))
+            ?.toList() ??
         <DbAiChat>[];
     for (final c in chats) {
       final tomb = DbAiChat()..fromMap(c.toMap());
       tomb.tombstone();
       await DbHelper.update(tomb);
     }
-  }
-
-  /// 孤儿数据清理:孤儿数据仅在旧版本(未自动保存历史/未级联删除)产生,
-  /// 新版本不会再产生,因此用版本标记保证只执行一次。
-  /// 废弃:仅用于一次性迁移,随下个版本删除
-  @Deprecated('仅用于清理旧版本遗留的孤儿数据,可随下个版本一并删除')
-  static const orphanCleanupVersion = 'v1';
-  static const _keyCleanupDone = 'ai_chat_cleanup_done';
-
-  /// 清理孤儿对话:historyId 为空、或指向已删除排盘历史的对话转墓碑。
-  /// 版本等于 [orphanCleanupVersion] 才执行,执行后记录版本标记,不再重复扫描。
-  /// 废弃:仅用于清理旧版本遗留的孤儿数据,随下个版本删除
-  @Deprecated('仅用于清理旧版本遗留的孤儿数据,可随下个版本一并删除')
-  static Future<void> cleanupOrphans() async {
-    if (await ConfigHelper.getConfig(_keyCleanupDone) == orphanCleanupVersion) {
-      return;
-    }
-    final chats = (await DbHelper.query<DbAiChat>(DbAiChat.nameDb))?.toList() ??
-        <DbAiChat>[];
-    if (chats.isEmpty) {
-      await ConfigHelper.saveConfig(_keyCleanupDone, orphanCleanupVersion);
-      return;
-    }
-    final histories = (await DbHelper.query<DbHistory>(DbHistory.nameDb))
-            ?.toList() ??
-        <DbHistory>[];
-    final historyById = {for (final h in histories) h.id: h};
-    var cleaned = false;
-    for (final c in chats) {
-      if (c.deleted == 1) continue;
-      final history = c.historyId == null ? null : historyById[c.historyId];
-      final orphan =
-          c.historyId == null || (history != null && history.deleted == 1);
-      if (orphan) {
-        final tomb = DbAiChat()..fromMap(c.toMap());
-        tomb.tombstone();
-        await DbHelper.update(tomb);
-        cleaned = true;
-      }
-    }
-    if (cleaned) {
-      SyncHelper.scheduleAutoSync();
-    }
-    await ConfigHelper.saveConfig(_keyCleanupDone, orphanCleanupVersion);
   }
 }

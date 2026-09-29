@@ -318,14 +318,14 @@ class DbAiChatAdapter extends TypeAdapter<DbAiChat> {
     };
     return DbAiChat()
       ..id = (fields[0] as num?)?.toInt()
-      ..historyId = (fields[1] as num?)?.toInt()
       ..shang = (fields[2] as num?)?.toInt()
       ..xia = (fields[3] as num?)?.toInt()
       ..bian = (fields[4] as num?)?.toInt()
       ..messages = fields[5] as String?
       ..updateTime = (fields[6] as num?)?.toInt()
       ..syncHash = fields[7] as String?
-      ..deleted = (fields[8] as num?)?.toInt();
+      ..deleted = (fields[8] as num?)?.toInt()
+      ..historyHash = fields[9] as String?;
   }
 
   @override
@@ -334,8 +334,6 @@ class DbAiChatAdapter extends TypeAdapter<DbAiChat> {
       ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
-      ..writeByte(1)
-      ..write(obj.historyId)
       ..writeByte(2)
       ..write(obj.shang)
       ..writeByte(3)
@@ -349,7 +347,9 @@ class DbAiChatAdapter extends TypeAdapter<DbAiChat> {
       ..writeByte(7)
       ..write(obj.syncHash)
       ..writeByte(8)
-      ..write(obj.deleted);
+      ..write(obj.deleted)
+      ..writeByte(9)
+      ..write(obj.historyHash);
   }
 
   @override
