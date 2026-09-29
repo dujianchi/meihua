@@ -10,8 +10,10 @@ class DbHistory extends Base {
   @override
   int? id;
   int? saveDate, shang, xia, bian;
+
   /// 最近一次修改时间(毫秒),用作同步 last-write-wins 的版本号
   int? updateTime;
+
   /// 软删标记:0/空=正常,1=已删除(列表不展示,但快照里保留以传播删除)
   int? deleted;
   String? lunarDate, title, describe, syncHash;
@@ -49,14 +51,13 @@ class DbHistory extends Base {
     return map;
   }
 
-  /// 计算并固化 syncHash(仅首次为空时计算,之后不再随内容变化),
-  /// 用作跨设备同步的身份键。必须在落盘前调用,否则磁盘上会存 null,
-  /// 重启后被 toMap 用已编辑的内容重算 → 与云端 op1 里的 hash 对不上,
-  /// 导致同步时按 syncHash 找不到记录、编辑回放失效。
+  /// 计算并固化 syncHash(仅首次为空时计算,之后不再随内容变化),用作跨设备的身份键。
+  /// 必须在落盘前调用,否则磁盘上会存 null,后续才被 toMap 惰性补算出来。
+  /// 公式里只有内容字段,不含本机 Hive 主键:主键每台设备各编各的,算进去就是
+  /// "每台设备给同一条记录铸出不同身份"。save_date 精确到毫秒,已足够区分。
   void ensureSyncHash() {
     if (syncHash?.isNotEmpty != true) {
       final map = <String, dynamic>{};
-      map['id'] = id;
       map['save_date'] = saveDate;
       map['lunar_date'] = lunarDate;
       map['shang'] = shang;
@@ -66,17 +67,6 @@ class DbHistory extends Base {
       map['describe'] = describe;
       syncHash = map.toString().md5();
     }
-  }
-
-  DbHistory fill() {
-    final now = DateTime.now();
-    saveDate ??= now.millisecondsSinceEpoch;
-    if (lunarDate == null) {
-      final lunar = now.toLunar();
-      lunarDate = lunar.niceStr();
-    }
-    updateTime ??= now.millisecondsSinceEpoch;
-    return this;
   }
 
   /// 刷新修改时间,标记本条为最新版本(同步时用于 last-write-wins)

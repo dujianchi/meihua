@@ -97,7 +97,8 @@ class DbAiChat extends Base {
   /// 是否已是精简墓碑(用于迁移时跳过已瘦身的记录)
   bool get isStrippedTombstone => deleted == 1 && messages == null;
 
-  /// 级联软删:该排盘历史(sync_hash)下的所有对话一并转墓碑(删除历史时调用)
+  /// 级联软删:该排盘历史(sync_hash)下的所有对话一并转墓碑(删除历史时调用)。
+  /// 只认外键这一个键 —— 卦象(上卦/下卦/变爻)经常重复,拿它当删除条件会误删别的卦的对话。
   static Future<void> tombstoneByHistory(String historyHash) async {
     final chats = (await DbHelper.query<DbAiChat>(
                 DbAiChat.nameDb,

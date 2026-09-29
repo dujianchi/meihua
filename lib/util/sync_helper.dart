@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:meihua/entity/database/db_ai_chat.dart';
@@ -120,15 +120,18 @@ class SyncHelper {
         //  可能因 frame 内部反序列化/缓存淘汰导致字段被清空)
         final rawList =
             (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [];
+        // 先把空 syncHash 落盘,再做克隆快照(顺序不能反)
+        await _persistHistoryHash(rawList);
         final localList =
             rawList.map((h) => DbHistory()..fromMap(h.toMap())).toList();
-        // 修复历史遗留:syncHash 为空的旧记录补算并刷新,否则快照合并会漏掉它们
+        // 存量已删除记录做一次性墓碑瘦身
         await _normalizeLocal(localList);
         // 按 syncHash 合并,update_time 新者胜(last-write-wins),平局墓碑胜
         final merged = _mergeSnapshots(remoteList, localList);
         // 落地本地(只更新比本地新的条目,新增远端独有的)
         await _applyToLocal(merged, localList);
-        // 整份快照写回远端(跳过关键字段为空的损坏记录)
+        // 整份快照写回远端(跳过关键字段为空的损坏记录)。因为是整份写回,这个条件
+        // 同时保证了云端不会存在 save_date 缺失的行 —— 列表排序和日期渲染都依赖它。
         final clean = merged
             .map((h) => h.toMap())
             .where((m) => m['sync_hash'] != null && m['save_date'] != null)
@@ -170,6 +173,7 @@ class SyncHelper {
         acquired = true;
         final rawList =
             (await DbHelper.query<DbHistory>(DbHistory.nameDb))?.toList() ?? [];
+        await _persistHistoryHash(rawList);
         // 克隆后操作,避免 Hive frame 缓存引用问题
         final localList =
             rawList.map((h) => DbHistory()..fromMap(h.toMap())).toList();
@@ -202,8 +206,8 @@ class SyncHelper {
   static const autoSyncInterval = Duration(hours: 1);
 
   /// 记录一次成功同步(手动/自动都调用,重置历史页自动同步的节流窗口)
-  static Future<void> markAutoSyncTime() => ConfigHelper.saveConfig(
-      autoSyncKey, '${DateTime.now().millisecondsSinceEpoch}');
+  static Future<void> markAutoSyncTime() =>
+      ConfigHelper.saveConfig(autoSyncKey, '${DateTime.now().millisecondsSinceEpoch}');
 
   /// 安排一次延迟自动同步(默认 2 秒后)。连续调用会重置计时,把快速连续的
   /// 增删改合并成一次同步。仅在已配置 WebDAV 时实际执行;同步在后台进行,
@@ -224,18 +228,21 @@ class SyncHelper {
     });
   }
 
-  /// 修复历史遗留:
-  /// 1. 旧版本落盘时 syncHash 可能为 null,补算并刷新 updateTime,
-  ///    使其能正常参与快照合并(否则会被 _mergeSnapshots 跳过,导致漏推/重复)。
-  /// 2. 存量已删除记录(旧版本删除未瘦身)执行一次性瘦身迁移:
-  ///    保留墓碑字段、清空其余,不刷新 updateTime,不破坏 LWW。
+  /// 把空 syncHash 落盘,理由同 _persistAiChatHash:惰性重算会让同一条记录在不同设备、
+  /// 不同 build 上算出不同身份。必须在克隆快照之前调用。
+  /// 已瘦身墓碑不补 —— 它没有可辨识的内容,算出来的值会和别的空墓碑撞车。
+  static Future<void> _persistHistoryHash(List<DbHistory> rawList) async {
+    for (final h in rawList) {
+      if (h.syncHash?.isNotEmpty == true || h.isStrippedTombstone) continue;
+      h.ensureSyncHash();
+      await DbHelper.save(h);
+    }
+  }
+
+  /// 存量已删除记录(旧版本删除未瘦身)执行一次性瘦身迁移:
+  /// 保留墓碑字段、清空其余,不刷新 updateTime,不破坏 LWW。
   static Future<void> _normalizeLocal(List<DbHistory> localList) async {
     for (final h in localList) {
-      if (h.syncHash == null || h.syncHash!.isEmpty) {
-        h.ensureSyncHash();
-        h.touch();
-        await DbHelper.save(h);
-      }
       if (h.deleted == 1 && !h.isStrippedTombstone) {
         h.tombstone(touch: false);
         await DbHelper.save(h);
@@ -355,22 +362,14 @@ class SyncHelper {
       await _createDir(_aiDir);
       final lockStr = await _getContent(_aiLock);
       if (lockStr.isBlank ||
-          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >=
-              _lockDays) {
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= _lockDays) {
         await _write(_aiLock, '${DateTime.now().millisecondsSinceEpoch}');
         acquired = true;
         final remoteList = await _readAiChatSnapshot(_aiJson);
         final rawList =
             (await DbHelper.query<DbAiChat>(DbAiChat.nameDb))?.toList() ?? [];
-        // 先把空 sync_hash 落盘:hash 过去只在 toMap() 里惰性算出、从不写回本地,
-        // 于是每次同步都按"当前 build 的公式"重算一遍。公式一变(或本机外键与
-        // 云端不同),同一份对话就分裂成两个身份,云端凭空多出一条野记录。
-        // 已瘦身墓碑(messages 为空)不补:它无内容可辨识,算出来会和别的空墓碑撞成同一个值。
-        for (final h in rawList) {
-          if (h.syncHash?.isNotEmpty == true || h.messages == null) continue;
-          h.ensureSyncHash();
-          await DbHelper.save(h);
-        }
+        // 先把空 sync_hash 落盘,再做克隆快照(顺序不能反)
+        await _persistAiChatHash(rawList);
         final localList =
             rawList.map((h) => DbAiChat()..fromMap(h.toMap())).toList();
         await _normalizeAiChatLocal(localList);
@@ -406,15 +405,31 @@ class SyncHelper {
       await _createDir(_aiDir);
       final lockStr = await _getContent(_aiLock);
       if (lockStr.isBlank ||
-          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >=
-              _lockDays) {
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= _lockDays) {
         await _write(_aiLock, '${DateTime.now().millisecondsSinceEpoch}');
         acquired = true;
+        // 覆盖云端之前先把远端已有的外键记下来:本地这份可能没有(老数据,或是别的设备
+        // 修好的挂载关系),整份覆盖会把修好的 history_hash 一起抹掉。
+        final remoteFk = <String, String>{};
+        for (final r in await _readAiChatSnapshot(_aiJson)) {
+          final key = r.syncHash;
+          final fk = r.historyHash;
+          if (key != null && key.isNotEmpty && fk != null && fk.isNotEmpty) {
+            remoteFk[key] = fk;
+          }
+        }
         final rawList =
             (await DbHelper.query<DbAiChat>(DbAiChat.nameDb))?.toList() ?? [];
+        await _persistAiChatHash(rawList);
         final localList =
             rawList.map((h) => DbAiChat()..fromMap(h.toMap())).toList();
         await _normalizeAiChatLocal(localList);
+        for (final h in localList) {
+          final key = h.syncHash;
+          if (key == null || key.isEmpty) continue;
+          if (h.historyHash?.isNotEmpty == true) continue;
+          h.historyHash = remoteFk[key];
+        }
         final clean = localList
             .map((h) => h.toMap())
             .where((m) => m['sync_hash'] != null)
@@ -434,14 +449,22 @@ class SyncHelper {
     }
   }
 
-  /// 修复历史遗留:syncHash 为空补算;存量已删除记录做一次性瘦身迁移
+  /// 把空 sync_hash 落盘。hash 过去只在 toMap() 里惰性算出、从不写回本地,于是每次同步都
+  /// 按"当前 build 的公式"重算一遍:公式一变,同一份对话就分裂成两个身份,云端凭空多出
+  /// 一条野记录。必须在克隆快照之前调用。
+  /// 已瘦身墓碑(messages 为空)不补 —— 它没有可辨识的内容,算出来会和别的空墓碑撞成
+  /// 同一个值,合并时全被压成一条。
+  static Future<void> _persistAiChatHash(List<DbAiChat> rawList) async {
+    for (final h in rawList) {
+      if (h.syncHash?.isNotEmpty == true || h.messages == null) continue;
+      h.ensureSyncHash();
+      await DbHelper.save(h);
+    }
+  }
+
+  /// 存量已删除记录做一次性墓碑瘦身迁移
   static Future<void> _normalizeAiChatLocal(List<DbAiChat> localList) async {
     for (final h in localList) {
-      if (h.syncHash == null || h.syncHash!.isEmpty) {
-        h.ensureSyncHash();
-        h.touch();
-        await DbHelper.save(h);
-      }
       if (h.deleted == 1 && !h.isStrippedTombstone) {
         h.tombstone(touch: false);
         await DbHelper.save(h);
@@ -460,19 +483,24 @@ class SyncHelper {
   static List<DbAiChat> _mergeAiChatSnapshots(
       List<DbAiChat> remote, List<DbAiChat> local) {
     final byHash = <String, DbAiChat>{};
+    // 外键单独收集:同一身份的所有副本里只要有一份带 history_hash 就认它。
+    // 不能只在"胜出者缺外键"时就地点补 —— 后处理的那份若版本号严格更大,会整条替换
+    // 掉胜出者,刚补上的外键跟着一起丢(等于云端修好的外键被一台旧副本抹掉)。
+    final bestFk = <String, String>{};
     for (final h in [...local, ...remote]) {
       final key = h.syncHash;
       if (key == null || key.isEmpty) continue;
+      final fk = h.historyHash;
+      if (fk != null && fk.isNotEmpty) bestFk[key] ??= fk;
       final prev = byHash[key];
       if (prev == null || _shouldReplaceChat(h, prev)) {
         byHash[key] = DbAiChat()..fromMap(h.toMap());
       }
-      // 外键只增不删:同一身份的两份副本,谁带 history_hash 就补到胜出那份上。
-      // 版本号平局时本地先入为主,一份"没有外键的旧副本"会把云端刚修好的外键抹掉。
-      final win = byHash[key]!;
-      if (win.historyHash?.isNotEmpty != true &&
-          h.historyHash?.isNotEmpty == true) {
-        win.historyHash = h.historyHash;
+    }
+    for (final e in byHash.entries) {
+      final fk = bestFk[e.key];
+      if (fk != null && e.value.historyHash?.isNotEmpty != true) {
+        e.value.historyHash = fk;
       }
     }
     return byHash.values.toList();

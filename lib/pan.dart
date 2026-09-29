@@ -46,7 +46,7 @@ class _PanState extends State<_Pan> {
   String? _titleStr, _descStr;
   DbAiChat? _aiChat;
   List<Map<String, String>>? _aiMessages;
-  bool _aiLoaded = false;
+  Future<void>? _aiChatLoad;
   TextSpan? _middleString, _bottomString;
 
   Future<TextSpan> _getSkText() async {
@@ -126,27 +126,32 @@ class _PanState extends State<_Pan> {
     }
   }
 
-  /// 加载AI对话:先按排盘历史的 sync_hash 精确查;再兜底捞"尚未挂到排盘历史"的对话
-  /// (新建排盘还没保存时外键为空,云端也可能有外键缺失的旧数据),按(上卦,下卦,变爻)匹配。
-  /// 同一卦可能有多段对话,取最新一段
-  Future<void> _loadAiChat() async {
-    if (_aiLoaded) return;
-    _aiLoaded = true;
+  /// 加载AI对话:已保存的排盘历史一律按它的 sync_hash 查(唯一跨设备不变的键);
+  /// 只有在排盘历史还没保存、尚无键可用时,才按(上卦,下卦,变爻)找。
+  /// 同一卦可能有多段对话,取最新一段。记忆化整个 Future,避免并发调用(_aiAsk 与
+  /// initState 各调一次)时前一次还没查完就拿到空结果、又建一条新对话
+  Future<void> _loadAiChat() => _aiChatLoad ??= _doLoadAiChat();
+
+  Future<void> _doLoadAiChat() async {
     final yi = widget.yi;
     if (yi == null) return;
     final historyHash = yi.historySyncHash;
-    final rows = await DbHelper.query<DbAiChat>(
-        DbAiChat.nameDb,
-        (ls) => ls?.where((t) {
-              if (t.deleted == 1) return false;
-              if (historyHash != null && t.historyHash == historyHash) {
-                return true;
-              }
-              return t.historyHash == null &&
-                  t.shang == yi.shang &&
-                  t.xia == yi.xia &&
-                  t.bian == yi.dong;
-            }));
+    Iterable<DbAiChat>? rows;
+    if (historyHash != null) {
+      rows = await DbHelper.query<DbAiChat>(
+          DbAiChat.nameDb,
+          (ls) =>
+              ls?.where((t) => t.historyHash == historyHash && t.deleted != 1));
+    } else {
+      rows = await DbHelper.query<DbAiChat>(
+          DbAiChat.nameDb,
+          (ls) => ls?.where((t) =>
+              t.historyHash == null &&
+              t.deleted != 1 &&
+              t.shang == yi.shang &&
+              t.xia == yi.xia &&
+              t.bian == yi.dong));
+    }
     final chat = rows?.isNotEmpty == true
         ? rows!.reduce(
             (a, b) => (a.updateTime ?? 0) >= (b.updateTime ?? 0) ? a : b)
@@ -169,16 +174,25 @@ class _PanState extends State<_Pan> {
     }
   }
 
-  /// AI对话更新回调:实时写入对话表(参与独立的对话同步)。
-  /// 对话始终关联一条排盘历史
+  /// AI对话更新回调:实时写入对话表(参与独立的对话同步)
   Future<void> _onAiMessagesUpdate(List<Map<String, String>> messages) async {
+    // 迟到回调保护:AI 回复可能在页面关闭之后才到,而这条对话那时可能已被删掉
+    // (本页删卦级联,或别的设备删了又同步下来)。此时再写回,update_time 会高于墓碑,
+    // LWW 就把已删除的对话在所有设备上复活。
+    final staleId = _aiChat?.id;
+    if (staleId != null) {
+      final gone = await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
+          (ls) => ls?.where((t) => t.id == staleId && t.deleted == 1));
+      if (gone?.isNotEmpty == true) return;
+    }
     _aiMessages = messages;
     final yi = widget.yi;
     var chat = _aiChat ??= DbAiChat()
       ..shang = yi?.shang
       ..xia = yi?.xia
       ..bian = yi?.dong;
-    // 新建时挂外键;按卦象兜底捞到的旧对话若还没有外键,这里一并补挂
+    // 外键只会由"当前打开的这一卦"写入,所以不存在挂错:已保存的卦按 sync_hash 精确命中
+    // 自己的对话;卦象兜底只可能捞到还没有外键的行,已被别的卦认领的进不了这个池子。
     chat.historyHash ??= yi?.historySyncHash ?? dhitory.syncHash;
     chat.messages = jsonEncode(messages);
     chat.touch();

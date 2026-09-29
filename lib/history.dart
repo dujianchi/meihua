@@ -20,7 +20,8 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   final _historyList = <DbHistory>[];
-  final _visibles = <int, bool>{};
+  // 按 sync_hash 记可见性:列表会重排/重载,用下标当键会错位隐藏错行
+  final _visibles = <String, bool>{};
   var _showAll = false;
 
   @override
@@ -76,7 +77,7 @@ class _HistoryState extends State<History> {
     final listview = ListView.separated(
       itemBuilder: (context, index) {
         final item = _historyList[index];
-        final visible = _visibles[index] == true;
+        final visible = _visibles[item.syncHash] == true;
         return HistoryItem(
           item: item,
           visible: visible,
@@ -87,7 +88,8 @@ class _HistoryState extends State<History> {
                 shang: item.shang! == 0 ? 8 : item.shang!,
                 xia: item.xia! == 0 ? 8 : item.xia!,
                 dong: item.bian! == 0 ? 6 : item.bian!,
-                historyDate: '${item.saveDate.dateStr()}\n(${item.lunarDate})',
+                historyDate:
+                    '${item.saveDate.dateStr()}\n(${item.lunarDate})',
                 historySyncHash: item.syncHash,
               ),
             );
@@ -95,7 +97,7 @@ class _HistoryState extends State<History> {
             _loadData();
           },
           onEdit: () => _edit(item),
-          onToggleVisible: () => _hide(index),
+          onToggleVisible: () => _hide(item),
           onDelete: () => _delete(item, index),
         );
       },
@@ -138,8 +140,9 @@ class _HistoryState extends State<History> {
   void _actionSelected(int index) async {
     if (index == 0) {
       _showAll = !_showAll;
-      for (var i = 0; i < _historyList.length; i++) {
-        _visibles[i] = _showAll;
+      for (final h in _historyList) {
+        final key = h.syncHash;
+        if (key != null) _visibles[key] = _showAll;
       }
       setState(() {});
     } else if (index == 1) {
@@ -236,11 +239,13 @@ class _HistoryState extends State<History> {
     showHistoryEditDialog(context, item, onSaved: () => _loadData());
   }
 
-  void _hide(int index) {
+  void _hide(DbHistory item) {
     Get.until((route) => Get.isBottomSheetOpen != true);
-    final visible = _visibles[index] ?? false;
+    final key = item.syncHash;
+    if (key == null) return;
+    final visible = _visibles[key] ?? false;
     setState(() {
-      _visibles[index] = !visible;
+      _visibles[key] = !visible;
     });
   }
 
@@ -272,7 +277,7 @@ class HistorySearchPage extends StatefulWidget {
 class _HistorySearchPageState extends State<HistorySearchPage> {
   final _ctrl = TextEditingController();
   var _results = <DbHistory>[];
-  final _hiddenIds = <int>{};
+  final _hiddenHashes = <String>{};
 
   @override
   void dispose() {
@@ -326,13 +331,14 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
       body: SafeArea(
         child: _results.isEmpty
             ? const Center(
-                child: Text('未找到相关记录', style: TextStyle(color: Colors.grey)))
+                child: Text('未找到相关记录',
+                    style: TextStyle(color: Colors.grey)))
             : ListView.separated(
                 itemBuilder: (context, index) {
                   final item = _results[index];
                   return HistoryItem(
                     item: item,
-                    visible: !_hiddenIds.contains(item.id),
+                    visible: !_hiddenHashes.contains(item.syncHash),
                     onTap: () {
                       Get.toNamed(
                         'pan',
@@ -349,9 +355,11 @@ class _HistorySearchPageState extends State<HistorySearchPage> {
                     onEdit: () => showHistoryEditDialog(context, item,
                         onSaved: () => _search(_ctrl.text)),
                     onToggleVisible: () {
+                      final key = item.syncHash;
+                      if (key == null) return;
                       setState(() {
-                        if (!_hiddenIds.remove(item.id!)) {
-                          _hiddenIds.add(item.id!);
+                        if (!_hiddenHashes.remove(key)) {
+                          _hiddenHashes.add(key);
                         }
                       });
                     },

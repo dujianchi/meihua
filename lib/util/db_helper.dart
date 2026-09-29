@@ -95,23 +95,6 @@ class DbHelper {
     return data.id;
   }
 
-  static Future<bool> exists(
-      String tableName, String columnName, dynamic value) async {
-    final box = _databaseByName(tableName);
-    final exists =
-        box?.values.firstWhereOrNull((e) => e.toMap()[columnName] == value);
-    return exists != null;
-  }
-
-  static Future<void> delete(
-      String table, bool Function(Base data) test) async {
-    final box = _databaseByName(table);
-    final waitDeletes = box?.values.where(test);
-    if (waitDeletes.isNoneEmpty) {
-      box?.deleteAll(waitDeletes!.map((d) => d.id).toList());
-    }
-  }
-
   static Future<void> update<T extends Base>(T data,
       [String idName = 'id', dynamic idArg]) async {
     assert(idName.isNotBlank);
