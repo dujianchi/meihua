@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:meihua/entity/database/db_ai_chat.dart';
@@ -202,8 +202,8 @@ class SyncHelper {
   static const autoSyncInterval = Duration(hours: 1);
 
   /// 记录一次成功同步(手动/自动都调用,重置历史页自动同步的节流窗口)
-  static Future<void> markAutoSyncTime() =>
-      ConfigHelper.saveConfig(autoSyncKey, '${DateTime.now().millisecondsSinceEpoch}');
+  static Future<void> markAutoSyncTime() => ConfigHelper.saveConfig(
+      autoSyncKey, '${DateTime.now().millisecondsSinceEpoch}');
 
   /// 安排一次延迟自动同步(默认 2 秒后)。连续调用会重置计时,把快速连续的
   /// 增删改合并成一次同步。仅在已配置 WebDAV 时实际执行;同步在后台进行,
@@ -355,12 +355,22 @@ class SyncHelper {
       await _createDir(_aiDir);
       final lockStr = await _getContent(_aiLock);
       if (lockStr.isBlank ||
-          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= _lockDays) {
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >=
+              _lockDays) {
         await _write(_aiLock, '${DateTime.now().millisecondsSinceEpoch}');
         acquired = true;
         final remoteList = await _readAiChatSnapshot(_aiJson);
         final rawList =
             (await DbHelper.query<DbAiChat>(DbAiChat.nameDb))?.toList() ?? [];
+        // 先把空 sync_hash 落盘:hash 过去只在 toMap() 里惰性算出、从不写回本地,
+        // 于是每次同步都按"当前 build 的公式"重算一遍。公式一变(或本机外键与
+        // 云端不同),同一份对话就分裂成两个身份,云端凭空多出一条野记录。
+        // 已瘦身墓碑(messages 为空)不补:它无内容可辨识,算出来会和别的空墓碑撞成同一个值。
+        for (final h in rawList) {
+          if (h.syncHash?.isNotEmpty == true || h.messages == null) continue;
+          h.ensureSyncHash();
+          await DbHelper.save(h);
+        }
         final localList =
             rawList.map((h) => DbAiChat()..fromMap(h.toMap())).toList();
         await _normalizeAiChatLocal(localList);
@@ -396,7 +406,8 @@ class SyncHelper {
       await _createDir(_aiDir);
       final lockStr = await _getContent(_aiLock);
       if (lockStr.isBlank ||
-          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >= _lockDays) {
+          DateTime.now().millisecondsSinceEpoch - lockStr.toInt() >=
+              _lockDays) {
         await _write(_aiLock, '${DateTime.now().millisecondsSinceEpoch}');
         acquired = true;
         final rawList =
@@ -456,6 +467,13 @@ class SyncHelper {
       if (prev == null || _shouldReplaceChat(h, prev)) {
         byHash[key] = DbAiChat()..fromMap(h.toMap());
       }
+      // 外键只增不删:同一身份的两份副本,谁带 history_hash 就补到胜出那份上。
+      // 版本号平局时本地先入为主,一份"没有外键的旧副本"会把云端刚修好的外键抹掉。
+      final win = byHash[key]!;
+      if (win.historyHash?.isNotEmpty != true &&
+          h.historyHash?.isNotEmpty == true) {
+        win.historyHash = h.historyHash;
+      }
     }
     return byHash.values.toList();
   }
@@ -474,6 +492,13 @@ class SyncHelper {
       } else if (_shouldReplaceChat(m, existing)) {
         final dh = DbAiChat()..fromMap(m.toMap());
         dh.id = existing.id;
+        await DbHelper.save(dh);
+      } else if (existing.historyHash?.isNotEmpty != true &&
+          m.historyHash?.isNotEmpty == true) {
+        // 版本号不比本地新、但本地缺外键:补挂外键落盘,内容一个字不动,也不 touch
+        // (不 touch 就靠合并阶段"外键只增不删"保住云端,避免为一条元数据搅乱 LWW)
+        final dh = DbAiChat()..fromMap(existing.toMap());
+        dh.historyHash = m.historyHash;
         await DbHelper.save(dh);
       }
     }

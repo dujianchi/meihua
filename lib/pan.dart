@@ -135,10 +135,13 @@ class _PanState extends State<_Pan> {
     final yi = widget.yi;
     if (yi == null) return;
     final historyHash = yi.historySyncHash;
-    final rows = await DbHelper.query<DbAiChat>(DbAiChat.nameDb,
+    final rows = await DbHelper.query<DbAiChat>(
+        DbAiChat.nameDb,
         (ls) => ls?.where((t) {
               if (t.deleted == 1) return false;
-              if (historyHash != null && t.historyHash == historyHash) return true;
+              if (historyHash != null && t.historyHash == historyHash) {
+                return true;
+              }
               return t.historyHash == null &&
                   t.shang == yi.shang &&
                   t.xia == yi.xia &&
@@ -172,12 +175,15 @@ class _PanState extends State<_Pan> {
     _aiMessages = messages;
     final yi = widget.yi;
     var chat = _aiChat ??= DbAiChat()
-      ..historyHash = yi?.historySyncHash ?? dhitory.syncHash
       ..shang = yi?.shang
       ..xia = yi?.xia
       ..bian = yi?.dong;
+    // 新建时挂外键;按卦象兜底捞到的旧对话若还没有外键,这里一并补挂
+    chat.historyHash ??= yi?.historySyncHash ?? dhitory.syncHash;
     chat.messages = jsonEncode(messages);
     chat.touch();
+    // hash 必须在落盘前固化:它只算一次,晚了就只能靠每次同步重算,公式一变就分裂成两个身份
+    chat.ensureSyncHash();
     await DbHelper.save(chat);
     SyncHelper.scheduleAutoSync();
   }

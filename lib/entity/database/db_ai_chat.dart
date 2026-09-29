@@ -63,8 +63,10 @@ class DbAiChat extends Base {
   /// 计算并固化 syncHash(仅首次为空时计算,之后不再随内容变化),用作同步身份键。
   /// 只取内容字段,不含关联键:对话可以在任何时候被挂到排盘历史下(见 pan 页的
   /// _saveHistory),关联键进了 hash 会让同一份对话固化出两个身份。
+  /// messages 为空(已瘦身墓碑)时不 calc —— 那时四个字段全是 null,算出来的是同一个
+  /// 值,会把所有无身份墓碑压成一条;它们本来也没法被任何设备按 hash 匹配上。
   void ensureSyncHash() {
-    if (syncHash?.isNotEmpty != true) {
+    if (syncHash?.isNotEmpty != true && messages != null) {
       final map = <String, dynamic>{};
       map['shang'] = shang;
       map['xia'] = xia;
