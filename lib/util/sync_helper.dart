@@ -132,10 +132,9 @@ class SyncHelper {
         await _applyToLocal(merged, localList);
         // 整份快照写回远端(跳过关键字段为空的损坏记录)。因为是整份写回,这个条件
         // 同时保证了云端不会存在 save_date 缺失的行 —— 列表排序和日期渲染都依赖它。
-        final clean = merged
+        final clean = _uploadSnapshot(merged
             .map((h) => h.toMap())
-            .where((m) => m['sync_hash'] != null && m['save_date'] != null)
-            .toList();
+            .where((m) => m['sync_hash'] != null && m['save_date'] != null));
         await _write(json, clean.toJson());
         if (toast) '同步完成'.toast();
       } else {
@@ -178,10 +177,9 @@ class SyncHelper {
         final localList =
             rawList.map((h) => DbHistory()..fromMap(h.toMap())).toList();
         await _normalizeLocal(localList);
-        final clean = localList
+        final clean = _uploadSnapshot(localList
             .map((h) => h.toMap())
-            .where((m) => m['sync_hash'] != null && m['save_date'] != null)
-            .toList();
+            .where((m) => m['sync_hash'] != null && m['save_date'] != null));
         await _write(json, clean.toJson());
         '同步完成'.toast();
       } else {
@@ -248,6 +246,15 @@ class SyncHelper {
         await DbHelper.save(h);
       }
     }
+  }
+
+  /// 云端快照的统一形态:去掉本机 Hive 主键,并按 sync_hash 排序。
+  /// id 是每台设备各自发的号(远端记录落地时一律重新发号),写进云端只会让人把它
+  /// 误当成跨设备身份;排序后任意设备上传的结果逐字节一致,两份下载文件可直接 diff。
+  static List<Map<String, dynamic>> _uploadSnapshot(
+      Iterable<Map<String, dynamic>> rows) {
+    return rows.map((m) => m..remove('id')).toList()
+      ..sort((a, b) => '${a['sync_hash']}'.compareTo('${b['sync_hash']}'));
   }
 
   /// 记录的版本时间戳:优先 update_time,回退 save_date,再回退 0
@@ -375,10 +382,8 @@ class SyncHelper {
         await _normalizeAiChatLocal(localList);
         final merged = _mergeAiChatSnapshots(remoteList, localList);
         await _applyAiChatToLocal(merged, localList);
-        final clean = merged
-            .map((h) => h.toMap())
-            .where((m) => m['sync_hash'] != null)
-            .toList();
+        final clean = _uploadSnapshot(
+            merged.map((h) => h.toMap()).where((m) => m['sync_hash'] != null));
         await _write(_aiJson, clean.toJson());
         if (toast) '对话同步完成'.toast();
       } else {
@@ -430,10 +435,9 @@ class SyncHelper {
           if (h.historyHash?.isNotEmpty == true) continue;
           h.historyHash = remoteFk[key];
         }
-        final clean = localList
+        final clean = _uploadSnapshot(localList
             .map((h) => h.toMap())
-            .where((m) => m['sync_hash'] != null)
-            .toList();
+            .where((m) => m['sync_hash'] != null));
         await _write(_aiJson, clean.toJson());
         '对话同步完成'.toast();
       } else {
